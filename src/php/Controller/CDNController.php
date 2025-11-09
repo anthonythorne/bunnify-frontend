@@ -91,14 +91,6 @@ class CDNController extends Controller {
 			return $image_url;
 		}
 
-		// Check local development mode first.
-		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled() ) {
-			if ( URLTransformer::image_exists_locally( $image_url ) ) {
-				$this->debug_log( 'Local development mode enabled and image exists locally: ' . $image_url . ', bypassing CDN transformation', 'cdn_url' );
-				return $image_url; // Return original URL unchanged.
-			}
-		}
-
 		// Allow specific image URLs to avoid going through Bunnify.
 		if ( false !== apply_filters( 'bunnify_skip_for_url', false, $image_url, $args, $scheme ) ) {
 			return $image_url;

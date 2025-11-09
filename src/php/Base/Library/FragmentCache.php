@@ -2,6 +2,8 @@
 /**
  * Fragment Cache
  *
+ * File Path: src/php/Base/Library/FragmentCache.php
+ *
  * @package BunnifyFrontend\Base
  */
 
@@ -423,13 +425,13 @@ class FragmentCache {
 		// Make unique if is HTTPS v HTTP if we are on a secure connection.
 		if ( ( isset( $_SERVER['HTTPS'] ) && ! empty( $_SERVER['HTTPS'] ) && 'off' !== $_SERVER['HTTPS'] ) ||
 			( isset( $_SERVER['SERVER_PORT'] ) && 443 === $_SERVER['SERVER_PORT'] ) ) {
-			$full_key .= 'https' . self::CACHE_KEY_SEPERATOR;
+			$full_key  .= 'https' . self::CACHE_KEY_SEPERATOR;
 		} else {
-			$full_key .= 'http' . self::CACHE_KEY_SEPERATOR;
+			$full_key  .= 'http' . self::CACHE_KEY_SEPERATOR;
 		}
 
 		if ( $language_code ) {
-			$full_key .= $language_code . self::CACHE_KEY_SEPERATOR;
+			$full_key  .= $language_code . self::CACHE_KEY_SEPERATOR;
 		}
 
 		if ( $group ) {
@@ -438,7 +440,7 @@ class FragmentCache {
 				$group = md5( $group );
 			}
 
-			$full_key .= $group . self::CACHE_KEY_SEPERATOR;
+			$full_key  .= $group . self::CACHE_KEY_SEPERATOR;
 		}
 
 		$md5_key = md5( $key . self::SALT );
@@ -502,7 +504,7 @@ class FragmentCache {
 
 		// Sort sub-arrays by values if they are associative and represent conditions or queries
 		if ( self::is_assoc( $args ) ) {
-			usort( $args, function ($a, $b) {
+			usort( $args, function ( $a, $b ) {
 				return strcmp( serialize( $a ), serialize( $b ) );
 			} );
 		}
@@ -535,39 +537,39 @@ class FragmentCache {
 	}
 
 	/**
-     * Purge cache entries related to a specific cache group.
-     *
-     * This method deletes all transient data and expiration entries related
-     * to a specific cache group from the WordPress options table.
-     *
-     * @param string $cache_group The cache group to purge.
+	 * Purge cache entries related to a specific cache group.
 	 *
-     * @return void
-     */
-    public static function purge_cache_group( string $cache_group ) {
+	 * This method deletes all transient data and expiration entries related
+	 * to a specific cache group from the WordPress options table.
+	 *
+	 * @param string $cache_group The cache group to purge.
+	 *
+	 * @return void
+	 */
+	public static function purge_cache_group( string $cache_group ) {
 
 		// Bail early if object cache is enabled. There are no transients to purge.
 		if ( wp_using_ext_object_cache() ) {
 			return;
 		}
 
-        global $wpdb;
+		global $wpdb;
 
-        // Get the cache key prefix from the current class.
-        $cache_prefix = self::get_cache_key_prefix();
+		// Get the cache key prefix from the current class.
+		$cache_prefix = self::get_cache_key_prefix();
 
-        // Prepare SQL which will delete both transient data and expiration entries (_transient_ and _transient_timeout_).
-        $sql = $wpdb->prepare(
-            "DELETE FROM {$wpdb->options}
+		// Prepare SQL which will delete both transient data and expiration entries (_transient_ and _transient_timeout_).
+		$sql = $wpdb->prepare(
+			"DELETE FROM {$wpdb->options}
             WHERE option_name LIKE %s
             AND option_name LIKE %s
             AND option_name LIKE %s",
-            '_transient_%',
-            '%' . $wpdb->esc_like( $cache_prefix ) . '%',
-            '%' . $wpdb->esc_like( $cache_group ) . '%'
-        );
+			'_transient_%',
+			'%' . $wpdb->esc_like( $cache_prefix ) . '%',
+			'%' . $wpdb->esc_like( $cache_group ) . '%'
+		);
 
-        // Execute the SQL query to remove the transients from the options table.
-        $wpdb->query( $sql ); // phpcs:ignore
-    }
+		// Execute the SQL query to remove the transients from the options table.
+		$wpdb->query( $sql ); // phpcs:ignore
+	}
 }

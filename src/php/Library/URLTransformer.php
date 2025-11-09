@@ -430,14 +430,6 @@ class URLTransformer {
 			return null;
 		}
 
-		// Check local development mode first.
-		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled() ) {
-			if ( self::image_exists_locally( $original_url ) ) {
-				// Return the original URL unchanged when local dev mode is enabled and image exists locally.
-				return $original_url;
-			}
-		}
-
 		if ( ! self::init_static_cdn() ) {
 			return $original_url;
 		}
