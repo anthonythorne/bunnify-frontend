@@ -95,8 +95,18 @@ would break activation. Only the *manifests* are stripped; the generated
 
 ## WordPress.org release flow
 
-Publishing is automated off GitHub Releases via
-[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml):
+Publishing runs through
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) — **which is
+deliberately disabled until the plugin is ready for wordpress.org.**
+
+> **Deploy is gated OFF.** Two independent guardrails prevent an accidental
+> release: the automatic `release:` trigger is commented out (so publishing a
+> GitHub Release does nothing), and the job is skipped unless the repository
+> variable `WPORG_RELEASE_ENABLED` is set to `true`. To enable releases later:
+> add the `SVN_USERNAME`/`SVN_PASSWORD` secrets, set `WPORG_RELEASE_ENABLED=true`,
+> and uncomment the `release:` trigger in `deploy.yml`.
+
+Once enabled, the flow is:
 
 - **Trigger:** a **published** GitHub Release (`on: release: [published]`).
   Creating the tag alone does nothing; the Release must be *published*.
@@ -111,11 +121,11 @@ Publishing is automated off GitHub Releases via
   account with commit access to the `bunnify-frontend` plugin. Set these under
   the repo's **Settings → Secrets and variables → Actions**.
 
-> **Current status (2026-07): scaffold / no-op.** Until the plugin is approved on
-> WordPress.org *and* the SVN secrets are set, this workflow runs but publishes
-> nothing meaningful. First-time submission (uploading the initial zip through
-> the wp.org "Add Your Plugin" flow and passing review) is a one-off manual step;
-> the workflow takes over for every release after that.
+> **Current status (2026-07): intentionally disabled.** The plugin is not ready
+> for wordpress.org, so the deploy is gated off (see the callout above). Even once
+> enabled, first-time submission — uploading the initial zip through the wp.org
+> "Add Your Plugin" flow and passing review — is a one-off manual step; the
+> workflow only takes over for releases after approval.
 
 ### Where wp.org listing assets go
 
@@ -179,7 +189,9 @@ Do these from a clean, up-to-date `main` working tree.
    ```
 9. **Watch the deploy:** confirm the *Deploy to WordPress.org* workflow ran and
    `10up/action-wordpress-plugin-deploy` committed `trunk/` + the new SVN tag.
-   (No-op until the plugin is approved and `SVN_USERNAME`/`SVN_PASSWORD` are set.)
+   (Deploy is gated off until the plugin is ready — re-enable it per the callout
+   in *WordPress.org release flow* above, once `WPORG_RELEASE_ENABLED` and the
+   SVN secrets are set.)
 10. **Verify on wp.org:** the listing shows the new version, `Tested up to`, and
     changelog; a fresh install activates cleanly.
 11. **Sync consumers:** update the caretochange vendored copy from the

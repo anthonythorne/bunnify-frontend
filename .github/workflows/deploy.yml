@@ -1,13 +1,25 @@
 name: Deploy to WordPress.org
 
-# Publishes a tagged release to the WordPress.org plugin SVN repository.
-# Requires repository secrets SVN_USERNAME and SVN_PASSWORD (a wordpress.org
-# account with commit access to the `bunnify-frontend` plugin). Until the plugin
-# is approved and the secrets are set, this workflow is a no-op scaffold.
+# ┌──────────────────────────────────────────────────────────────────────────┐
+# │ NOT ENABLED. This plugin is not ready for a wordpress.org release yet.     │
+# └──────────────────────────────────────────────────────────────────────────┘
+#
+# Two independent guardrails keep this from publishing prematurely:
+#   1. Manual trigger only. The automatic `release:` trigger is commented out,
+#      so publishing a GitHub Release will NOT deploy anything.
+#   2. Even a manual run is skipped unless the repository variable
+#      WPORG_RELEASE_ENABLED is exactly 'true'.
+#
+# To enable a real release later:
+#   - add the SVN_USERNAME / SVN_PASSWORD secrets (a wordpress.org account with
+#     commit access to the approved `bunnify-frontend` plugin);
+#   - set the repository variable WPORG_RELEASE_ENABLED = true;
+#   - uncomment the `release:` trigger below.
 
 on:
-  release:
-    types: [ published ]
+  workflow_dispatch:
+  # release:
+  #   types: [ published ]
 
 permissions:
   contents: read
@@ -16,6 +28,8 @@ jobs:
   deploy:
     name: Deploy to WordPress.org SVN
     runs-on: ubuntu-latest
+    # Hard stop until the plugin is explicitly marked ready for release.
+    if: ${{ vars.WPORG_RELEASE_ENABLED == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
