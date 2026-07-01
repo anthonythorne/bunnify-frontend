@@ -54,7 +54,7 @@ class SettingsController extends Controller {
 		register_setting( 'bunnify_frontend_options', 'bunnify_debug_enabled' );
 		register_setting( 'bunnify_frontend_options', 'bunnify_debug_refreshes' );
 		register_setting( 'bunnify_frontend_options', 'bunnify_local_dev_mode' );
-		
+
 		// Categorized debug logging settings.
 		register_setting( 'bunnify_frontend_options', 'bunnify_debug_url_transformation' );
 		register_setting( 'bunnify_frontend_options', 'bunnify_debug_image_processing' );
@@ -353,6 +353,7 @@ class SettingsController extends Controller {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading WordPress core's own post-save redirect flag; no form data is processed.
 		if ( isset( $_GET['settings-updated'] ) ) {
 			add_settings_error( 'bunnify_frontend_messages', 'bunnify_frontend_message', __( 'BunnyCDN Settings Saved', 'bunnify-frontend' ), 'updated' );
 		}
@@ -365,17 +366,18 @@ class SettingsController extends Controller {
 		$log_file_url = $upload_dir['baseurl'] . '/bunnify-debug.log';
 		$log_exists   = file_exists( $log_file );
 		$log_size     = $log_exists ? size_format( filesize( $log_file ) ) : '0 B';
-		
+
 		// Count page refreshes in log file.
 		$page_refresh_count = 0;
 		if ( $log_exists ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin log file, not a remote resource.
 			$content = file_get_contents( $log_file );
 			if ( ! empty( $content ) ) {
 				$refresh_marker = str_repeat( '=', 80 );
 				$sections       = explode( $refresh_marker, $content );
 				foreach ( $sections as $section ) {
 					if ( strpos( $section, 'PAGE REFRESH:' ) !== false ) {
-						$page_refresh_count++;
+						++$page_refresh_count;
 					}
 				}
 			}
@@ -454,4 +456,4 @@ class SettingsController extends Controller {
 
 		return (bool) get_option( 'bunnify_local_dev_mode', false );
 	}
-} 
+}

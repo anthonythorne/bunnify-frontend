@@ -49,8 +49,8 @@ class RESTController extends Controller {
 	/**
 	 * Check if REST request should use CDN image downsize.
 	 *
-	 * @param mixed $response Response data.
-	 * @param array $endpoint_data Endpoint data.
+	 * @param mixed            $response Response data.
+	 * @param array            $endpoint_data Endpoint data.
 	 * @param \WP_REST_Request $request Request object.
 	 * @return mixed Response data.
 	 */
@@ -74,7 +74,7 @@ class RESTController extends Controller {
 	/**
 	 * Handle REST attachment insertion for CDN processing.
 	 *
-	 * @param \WP_Post $attachment Attachment post object.
+	 * @param \WP_Post         $attachment Attachment post object.
 	 * @param \WP_REST_Request $request Request object.
 	 */
 	public function should_rest_bunnify_image_downsize_insert_attachment( $attachment, $request ) {
@@ -109,4 +109,4 @@ class RESTController extends Controller {
 			return $response;
 		}
 	}
-} 
+}

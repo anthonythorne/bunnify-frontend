@@ -1,0 +1,176 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\#1 \\$text of function esc_attr expects string, int given\\.$#"
+			count: 2
+			path: bunnify-frontend/src/php/Base/Library/FragmentCache.php
+
+		-
+			message: "#^Function array_sort_by_keys_then_values not found\\.$#"
+			count: 3
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^Function flatten_multi_array not found\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^If condition is always true\\.$#"
+			count: 2
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^Result of && is always false\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^Undefined variable\\: \\$tax_query$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^Variable \\$tax_query in empty\\(\\) is never defined\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^Variable \\$tax_terms in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/FragmentCacheKeyWPQueryArgs.php
+
+		-
+			message: "#^Access to an undefined property BunnifyFrontend\\\\Base\\\\Library\\\\REST\\:\\:\\$current_endpoint\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/REST.php
+
+		-
+			message: "#^Method BunnifyFrontend\\\\Base\\\\Library\\\\Templater\\:\\:render\\(\\) should return string\\|false but return statement is missing\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Library/Templater.php
+
+		-
+			message: "#^Cannot instantiate class BunnifyFrontend\\\\Base\\\\Library\\\\Route via protected constructor BunnifyFrontend\\\\Base\\\\Library\\\\Route\\:\\:__construct\\(\\)\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Main/Application.php
+
+		-
+			message: "#^Access to constant TAXONOMY_NAME_DEFAULT on an unknown class BunnifyFrontend\\\\Base\\\\Model\\\\TaxonomyTermModel\\.$#"
+			count: 4
+			path: bunnify-frontend/src/php/Base/Model/GenericPostModel.php
+
+		-
+			message: "#^Call to an undefined method BunnifyFrontend\\\\Base\\\\Model\\\\GenericPostModel\\:\\:update_acf_field\\(\\)\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Base/Model/GenericPostModelFactory.php
+
+		-
+			message: "#^Access to constant TAXONOMY_NAME_DEFAULT on an unknown class BunnifyFrontend\\\\Base\\\\Model\\\\TaxonomyTermModel\\.$#"
+			count: 4
+			path: bunnify-frontend/src/php/Base/Model/WPTaxonomyTerms.php
+
+		-
+			message: "#^Expression on left side of \\?\\? is not nullable\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/CDNController.php
+
+		-
+			message: "#^Parameter \\#1 \\$query of method WP_HTML_Tag_Processor\\:\\:next_tag\\(\\) expects array\\{tag_name\\?\\: string\\|null, match_offset\\?\\: int\\|null, class_name\\?\\: string\\|null, tag_closers\\?\\: string\\|null\\}\\|null, 'img' given\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/ContentController.php
+
+		-
+			message: "#^Call to function is_int\\(\\) with array will always evaluate to false\\.$#"
+			count: 2
+			path: bunnify-frontend/src/php/Controller/ImageController.php
+
+		-
+			message: "#^One or more @param tags has an invalid name or invalid syntax\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/ImageController.php
+
+		-
+			message: "#^Parameter \\#1 \\$query of method WP_HTML_Tag_Processor\\:\\:next_tag\\(\\) expects array\\{tag_name\\?\\: string\\|null, match_offset\\?\\: int\\|null, class_name\\?\\: string\\|null, tag_closers\\?\\: string\\|null\\}\\|null, 'img' given\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/ImageController.php
+
+		-
+			message: "#^Parameter \\#2 \\$value of method WP_HTML_Tag_Processor\\:\\:set_attribute\\(\\) expects bool\\|string, int\\<min, \\-1\\>\\|int\\<1, max\\> given\\.$#"
+			count: 2
+			path: bunnify-frontend/src/php/Controller/ImageController.php
+
+		-
+			message: "#^Callback expects 1 parameter, \\$accepted_args is set to 3\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/RESTController.php
+
+		-
+			message: "#^Dead catch \\- Exception is never thrown in the try block\\.$#"
+			count: 2
+			path: bunnify-frontend/src/php/Controller/RESTController.php
+
+		-
+			message: "#^Property BunnifyFrontend\\\\Controller\\\\RESTController\\:\\:\\$bunnify_hostname is never read, only written\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/RESTController.php
+
+		-
+			message: "#^Property BunnifyFrontend\\\\Controller\\\\RESTController\\:\\:\\$url_transformer is never read, only written\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/RESTController.php
+
+		-
+			message: "#^Parameter \\#1 \\$text of function esc_html expects string, int\\<0, max\\> given\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Controller/SettingsController.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Function/AutoLoad.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Function/AutoLoad.php
+
+		-
+			message: "#^Result of \\|\\| is always true\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Function/AutoLoad.php
+
+		-
+			message: "#^Constant BunnifyFrontend\\\\Library\\\\ImageProcessor\\:\\:CACHE_TTL_LONG is unused\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/ImageProcessor.php
+
+		-
+			message: "#^Constant BunnifyFrontend\\\\Library\\\\ImageProcessor\\:\\:CACHE_TTL_MEDIUM is unused\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/ImageProcessor.php
+
+		-
+			message: "#^Constant BunnifyFrontend\\\\Library\\\\ImageProcessor\\:\\:CACHE_TTL_VERY_LONG is unused\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/ImageProcessor.php
+
+		-
+			message: "#^Constant BunnifyFrontend\\\\Library\\\\URLTransformer\\:\\:CACHE_TTL_LONG is unused\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/URLTransformer.php
+
+		-
+			message: "#^Constant BunnifyFrontend\\\\Library\\\\URLTransformer\\:\\:CACHE_TTL_MEDIUM is unused\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/URLTransformer.php
+
+		-
+			message: "#^Constant BunnifyFrontend\\\\Library\\\\URLTransformer\\:\\:CACHE_TTL_VERY_LONG is unused\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/URLTransformer.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between false and int\\<0, max\\> will always evaluate to false\\.$#"
+			count: 1
+			path: bunnify-frontend/src/php/Library/URLTransformer.php

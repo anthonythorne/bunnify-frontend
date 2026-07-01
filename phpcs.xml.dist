@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<ruleset name="Bunnify Frontend">
+	<description>Coding standards for the Bunnify Frontend plugin.</description>
+
+	<!--
+		We lint the plugin-specific code. The reusable "Base" mini-framework
+		under src/php/Base is treated as a vendored dependency and is excluded
+		for now (see docs/blueprints/enhancements/base-framework-standards).
+	-->
+	<file>bunnify-frontend/bunnify-frontend.php</file>
+	<file>bunnify-frontend/uninstall.php</file>
+	<file>bunnify-frontend/src/php/Controller</file>
+	<file>bunnify-frontend/src/php/Library</file>
+	<file>bunnify-frontend/src/php/Model</file>
+	<file>bunnify-frontend/src/php/Function</file>
+
+	<!-- Never lint vendored or generated code. -->
+	<exclude-pattern>*/build-tools/vendor/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+	<!-- Framework autoloader bootstrap: intentional global-scope glue. -->
+	<exclude-pattern>*/Function/AutoLoad.php</exclude-pattern>
+
+	<!-- Show sniff codes and progress; run in parallel; only scan PHP. -->
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+	<arg name="parallel" value="8"/>
+	<arg name="basepath" value="."/>
+
+	<config name="minimum_supported_wp_version" value="6.3"/>
+	<config name="testVersion" value="8.2-"/>
+
+	<rule ref="WordPress">
+		<!-- PSR-4 class-per-file layout; composer autoloading, not WP file naming. -->
+		<exclude name="WordPress.Files.FileName"/>
+		<!-- Short-array style is used throughout and enforced by .editorconfig. -->
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+		<!-- Short ternary (?:) is an intentional, readable idiom here. -->
+		<exclude name="Universal.Operators.DisallowShortTernary"/>
+		<!-- Typed properties self-document; a redundant @var is not required. -->
+		<exclude name="Squiz.Commenting.VariableComment.MissingVar"/>
+		<!-- Inline-comment terminal punctuation is not enforced. -->
+		<exclude name="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+		<!--
+			The plugin ships a deliberate debug-logging subsystem that uses
+			error_log()/print_r() behind opt-in category toggles. Replacing it
+			with a PSR-3 logger is tracked as a blueprint enhancement.
+		-->
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_error_log"/>
+		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_print_r"/>
+	</rule>
+
+	<!-- Enforce our i18n text domain. -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="bunnify-frontend"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Global symbols must carry a bunnify / BunnifyFrontend prefix. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="bunnify"/>
+				<element value="BunnifyFrontend"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

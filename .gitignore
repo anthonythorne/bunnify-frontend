@@ -1,31 +1,40 @@
-# General Files to Ignore
-*~
+# --- Development artefacts (repo root only; leading slash anchors to root) ---
+/vendor/
+/build/
+/dist/
+composer.phar
+.phpunit.result.cache
+.phpcs.cache
+.phpstan.cache/
+
+# NOTE: bunnify-frontend/build-tools/vendor/ is intentionally NOT ignored —
+# it is the plugin's minimal runtime autoloader and ships with the plugin.
+
+# --- Editors / IDEs ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- OS cruft ---
 .DS_Store
-.svn
-.cvs
-*.bak
-*.swp
 Thumbs.db
-.htaccess
 .directory
-.vscode
-.idea
-
-# Duplicate Ignore Patterns (Review for Potential Removal)
-*.bak
-*.cvs
-.DS_Store
-
-# Commonly Ignored File Extensions
-*.db
-*.diff
-*.err
-*.log
-*.orig
-*.rej
-*.zip
-
-# Files Starting/Ending with ~ or ._ 
+._*
 ~*
 *~
-._*
+
+# --- Version control noise ---
+.svn
+.cvs
+
+# --- Backups / logs / archives ---
+*.bak
+*.swp
+*.orig
+*.rej
+*.log
+*.diff
+*.err
+*.db
+.htaccess

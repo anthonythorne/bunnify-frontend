@@ -154,7 +154,7 @@ class ContentController extends Controller {
 			if ( ! empty( $src ) && URLTransformer::validate_image_url( $src ) ) {
 				// Extract dimensions from the original URL for CDN parameters.
 				$extracted_dimensions = ImageProcessor::parse_dimensions_from_filename( $src );
-				
+
 				// Get attachment ID from the URL (even if it has dimensions).
 				$attachment_id = ImageProcessor::get_attachment_id_from_url( $src );
 
@@ -200,10 +200,10 @@ class ContentController extends Controller {
 					// Generate CDN URL using attachment ID with proper dimensions.
 					// This will use the original image URL, not the resized one.
 					$cdn_url = URLTransformer::get_cdn_url_by_id( $attachment_id, $cdn_args );
-					
+
 					// Debug logging for CDN URL generation.
-					$this->debug_log( "Generated CDN URL: " . ( $cdn_url ?: 'null' ), 'content_processing' );
-					
+					$this->debug_log( 'Generated CDN URL: ' . ( $cdn_url ?: 'null' ), 'content_processing' );
+
 					if ( $cdn_url ) {
 						$processor->set_attribute( 'src', $cdn_url );
 
@@ -219,7 +219,7 @@ class ContentController extends Controller {
 				} else {
 					// Debug logging for failed attachment ID lookup.
 					$this->debug_log( "Failed to find attachment ID for URL: {$src}", 'content_processing' );
-					
+
 					// For non-attachment images, use a direct CDN transformation.
 					$cdn_url = $this->transform_url_direct( $src );
 					if ( $cdn_url ) {
@@ -236,7 +236,7 @@ class ContentController extends Controller {
 	 * Transform srcset URLs for content images.
 	 *
 	 * @param string $srcset_value The srcset attribute value.
-	 * @param int $attachment_id The attachment ID.
+	 * @param int    $attachment_id The attachment ID.
 	 * @return string|false The transformed srcset or false on failure.
 	 */
 	private function transform_srcset_for_content( string $srcset_value, int $attachment_id ): string|false {

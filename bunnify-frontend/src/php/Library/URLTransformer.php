@@ -12,6 +12,8 @@
  * Provides CDN URL transformation and processing utilities.
  */
 
+declare( strict_types=1 );
+
 namespace BunnifyFrontend\Library;
 
 use BunnifyFrontend\Base\Traits\DebugTrait;
@@ -29,7 +31,7 @@ class URLTransformer {
 	/**
 	 * Initialize the CDN library.
 	 *
-	 * @param string $hostname The BunnyCDN hostname.
+	 * @param string $bunnify_hostname The BunnyCDN hostname.
 	 * @throws \InvalidArgumentException If hostname is invalid.
 	 */
 	public function __construct(
@@ -77,8 +79,9 @@ class URLTransformer {
 			return $image_url;
 		}
 
-		// Filter the original image URL before processing.
-		$image_url = apply_filters( 'bunnify_pre_image_url', $image_url, $args, $scheme );
+		// Filter the original image URL before processing. Cast to preserve the
+		// string return contract under strict_types if a filter returns non-string.
+		$image_url = (string) apply_filters( 'bunnify_pre_image_url', $image_url, $args, $scheme );
 
 		// Filter the arguments before processing.
 		$args = apply_filters( 'bunnify_pre_args', $args, $image_url, $scheme );
@@ -112,7 +115,7 @@ class URLTransformer {
 		$cdn_url = $this->build_cdn_url( $image_url_parts, $args, $scheme );
 
 		// Filter the final CDN URL.
-		$cdn_url = apply_filters( 'bunnify_post_image_url', $cdn_url, $image_url, $args, $scheme );
+		$cdn_url = (string) apply_filters( 'bunnify_post_image_url', $cdn_url, $image_url, $args, $scheme );
 
 		$this->debug_log( 'CDN URL generated: ' . $cdn_url, 'transform_url' );
 
@@ -158,8 +161,8 @@ class URLTransformer {
 	/**
 	 * Build the CDN URL from parsed URL parts.
 	 *
-	 * @param array $url_parts Parsed URL parts.
-	 * @param array $args CDN arguments.
+	 * @param array       $url_parts Parsed URL parts.
+	 * @param array       $args CDN arguments.
 	 * @param string|null $scheme URL scheme.
 	 * @return string The CDN URL.
 	 */
@@ -235,7 +238,7 @@ class URLTransformer {
 	/**
 	 * Apply URL scheme to hostname.
 	 *
-	 * @param string $url The URL to apply scheme to.
+	 * @param string      $url The URL to apply scheme to.
 	 * @param string|null $scheme The scheme to apply.
 	 * @return string URL with scheme applied.
 	 */
@@ -312,7 +315,7 @@ class URLTransformer {
 
 		// Extract the relative path from wp-content/uploads onwards.
 		$uploads_pos = strpos( $url_path, '/wp-content/uploads/' );
-		if ( $uploads_pos === false ) {
+		if ( false === $uploads_pos ) {
 			return false;
 		}
 
@@ -324,12 +327,14 @@ class URLTransformer {
 
 		// Debug logging if enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( sprintf(
-				'Bunnify Local Dev Mode Debug - URL: %s, Local Path: %s, Exists: %s',
-				$url,
-				$local_path,
-				$file_exists ? 'true' : 'false'
-			) );
+			error_log(
+				sprintf(
+					'Bunnify Local Dev Mode Debug - URL: %s, Local Path: %s, Exists: %s',
+					$url,
+					$local_path,
+					$file_exists ? 'true' : 'false'
+				)
+			);
 		}
 
 		return $file_exists;
@@ -455,9 +460,9 @@ class URLTransformer {
 	/**
 	 * Get CDN URL by attachment ID without dimension stripping.
 	 *
-	 * @param int $attachment_id The attachment ID.
+	 * @param int          $attachment_id The attachment ID.
 	 * @param array|string $args CDN arguments.
-	 * @param string|null $scheme URL scheme.
+	 * @param string|null  $scheme URL scheme.
 	 * @return string|null The CDN URL or null if not found.
 	 */
 	public static function get_cdn_url_by_id( int $attachment_id, array|string $args = [], ?string $scheme = null ): ?string {
@@ -480,7 +485,7 @@ class URLTransformer {
 	/**
 	 * Get the true original URL from attachment metadata with caching.
 	 *
-	 * @param int $attachment_id The attachment ID.
+	 * @param int    $attachment_id The attachment ID.
 	 * @param string $original_url The original URL from WordPress.
 	 * @return string The true original URL.
 	 */
@@ -542,9 +547,9 @@ class URLTransformer {
 	/**
 	 * Build CDN URL from attachment URL without dimension stripping.
 	 *
-	 * @param string $original_url The original attachment URL.
+	 * @param string       $original_url The original attachment URL.
 	 * @param array|string $args CDN arguments.
-	 * @param string|null $scheme URL scheme.
+	 * @param string|null  $scheme URL scheme.
 	 * @return string|null The CDN URL or null on failure.
 	 */
 	private function build_cdn_url_from_attachment( string $original_url, array|string $args = [], ?string $scheme = null ): ?string {

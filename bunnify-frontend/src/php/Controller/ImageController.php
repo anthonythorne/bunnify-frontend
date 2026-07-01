@@ -37,7 +37,7 @@ use BunnifyFrontend\Library\URLTransformer;
  * ### 1. WordPress Image Generation
  * When `wp_get_attachment_image()` is called, WordPress follows this flow:
  * ```
- * wp_get_attachment_image() 
+ * wp_get_attachment_image()
  *   ↓
  * wp_get_attachment_image_src() → filter_image_downsize() → CDN URL
  *   ↓
@@ -184,8 +184,8 @@ class ImageController extends Controller {
 	 * This filter processes image size requests and transforms URLs to CDN
 	 * while preserving proper dimensions for custom sizes.
 	 *
-	 * @param array|false $image Array of image data, or boolean false if no image.
-	 * @param int         $attachment_id Image attachment ID.
+	 * @param array|false  $image Array of image data, or boolean false if no image.
+	 * @param int          $attachment_id Image attachment ID.
 	 * @param string|array $size Requested size.
 	 * @return array|false Modified image data or false.
 	 */
@@ -274,7 +274,7 @@ class ImageController extends Controller {
 			}
 
 			// Return new image array with CDN URL and dimensions.
-			return [ 
+			return [
 				$cdn_url,
 				$width,
 				$height,
@@ -314,7 +314,7 @@ class ImageController extends Controller {
 			}
 
 			// Return new image array with CDN URL and dimensions.
-			return [ 
+			return [
 				$cdn_url,
 				$width,
 				$height,
@@ -329,10 +329,10 @@ class ImageController extends Controller {
 	 * This filter processes attachment image sources and transforms URLs to CDN
 	 * while preserving proper dimensions for custom sizes.
 	 *
-	 * @param array|false $image Array of image data, or boolean false if no image.
-	 * @param int         $attachment_id Image attachment ID.
+	 * @param array|false  $image Array of image data, or boolean false if no image.
+	 * @param int          $attachment_id Image attachment ID.
 	 * @param string|array $size Requested size.
-	 * @param bool        $icon Whether the image should be treated as an icon.
+	 * @param bool         $icon Whether the image should be treated as an icon.
 	 * @return array|false Modified image data or false.
 	 */
 	public function filter_attachment_img_srcs( array|false $image, int $attachment_id, string|array $size, bool $icon ): array|false {
@@ -475,11 +475,11 @@ class ImageController extends Controller {
 	 * all the proper dimensions and responsive image attributes that WordPress
 	 * has generated.
 	 *
-	 * @param string $html The image HTML.
-	 * @param int $attachment_id The attachment ID.
+	 * @param string       $html The image HTML.
+	 * @param int          $attachment_id The attachment ID.
 	 * @param string|array $size The requested size.
-	 * @param bool $icon Whether the image should be treated as an icon.
-	 * @param array $attr Array of attributes.
+	 * @param bool         $icon Whether the image should be treated as an icon.
+	 * @param array        $attr Array of attributes.
 	 * @return string Modified HTML.
 	 */
 	public function filter_attachment_image( string $html, int $attachment_id, string|array $size, bool $icon, array $attr ): string {
@@ -636,11 +636,11 @@ class ImageController extends Controller {
 	/**
 	 * Filter srcset array to transform URLs to CDN while preserving dimensions.
 	 *
-	 * @param array $sources Array of image sources.
-	 * @param array $size_array Array of width and height values.
+	 * @param array  $sources Array of image sources.
+	 * @param array  $size_array Array of width and height values.
 	 * @param string $image_src The 'src' of the image.
-	 * @param array $image_meta The image meta data as returned by 'wp_get_attachment_metadata()'.
-	 * @param int $attachment_id Image attachment ID.
+	 * @param array  $image_meta The image meta data as returned by 'wp_get_attachment_metadata()'.
+	 * @param int    $attachment_id Image attachment ID.
 	 * @return array Modified sources array.
 	 */
 	public function filter_srcset_array( array $sources, array $size_array, string $image_src, array $image_meta, int $attachment_id ): array {
@@ -648,7 +648,7 @@ class ImageController extends Controller {
 		$this->debug_log( "filter_srcset_array called with attachment_id: {$attachment_id}, sources count: " . count( $sources ), 'filter_srcset_array' );
 
 		if ( empty( $sources ) ) {
-			$this->debug_log( "No sources provided, returning empty array", 'filter_srcset_array' );
+			$this->debug_log( 'No sources provided, returning empty array', 'filter_srcset_array' );
 			return $sources;
 		}
 
@@ -692,8 +692,8 @@ class ImageController extends Controller {
 			}
 
 			// Extract dimensions from the source.
-			$width  = $source['descriptor'] === 'w' ? $source['value'] : ( $size_array[0] ?? false );
-			$height = $source['descriptor'] === 'h' ? $source['value'] : ( $size_array[1] ?? false );
+			$width  = 'w' === $source['descriptor'] ? $source['value'] : ( $size_array[0] ?? false );
+			$height = 'h' === $source['descriptor'] ? $source['value'] : ( $size_array[1] ?? false );
 
 			// If we don't have dimensions, try to extract them from the URL.
 			if ( ! $width || ! $height ) {
@@ -744,15 +744,15 @@ class ImageController extends Controller {
 	/**
 	 * Filter srcset metadata to ensure custom sizes are properly handled.
 	 *
-	 * @param array $image_meta The image meta data.
-	 * @param array $size_array Array of width and height values.
+	 * @param array  $image_meta The image meta data.
+	 * @param array  $size_array Array of width and height values.
 	 * @param string $image_src The 'src' of the image.
-	 * @param int $attachment_id Image attachment ID.
+	 * @param int    $attachment_id Image attachment ID.
 	 * @return array Modified image meta data.
 	 */
 	public function filter_srcset_meta( array $image_meta, array $size_array, string $image_src, int $attachment_id ): array {
 		// Debug logging for srcset meta processing.
-		$this->debug_log( "filter_srcset_meta called with attachment_id: {$attachment_id}, size_array: [" . implode( ',', $size_array ) . "], meta_sizes_count: " . ( isset( $image_meta['sizes'] ) ? count( $image_meta['sizes'] ) : 0 ), 'filter_srcset_meta' );
+		$this->debug_log( "filter_srcset_meta called with attachment_id: {$attachment_id}, size_array: [" . implode( ',', $size_array ) . '], meta_sizes_count: ' . ( isset( $image_meta['sizes'] ) ? count( $image_meta['sizes'] ) : 0 ), 'filter_srcset_meta' );
 
 		// If the image meta is empty or missing sizes, try to get it from the attachment.
 		if ( empty( $image_meta ) || empty( $image_meta['sizes'] ) ) {
@@ -792,9 +792,9 @@ class ImageController extends Controller {
 	 * Generate srcset and sizes attributes for an image.
 	 *
 	 * @param WP_HTML_Tag_Processor $processor The HTML tag processor.
-	 * @param int $attachment_id The attachment ID.
-	 * @param string|array $size The requested size.
-	 * @param string $cdn_url The CDN URL for the main image.
+	 * @param int                   $attachment_id The attachment ID.
+	 * @param string|array          $size The requested size.
+	 * @param string                $cdn_url The CDN URL for the main image.
 	 */
 	private function generate_srcset_and_sizes( $processor, int $attachment_id, $size, string $cdn_url ): void {
 		// Get image metadata.
@@ -832,7 +832,7 @@ class ImageController extends Controller {
 	 * Get the size array for a given size.
 	 *
 	 * @param string|array $size The requested size.
-	 * @param array $image_meta The image metadata.
+	 * @param array        $image_meta The image metadata.
 	 * @return array|false The size array or false if not found.
 	 */
 	private function get_size_array( $size, array $image_meta ): array|false {
@@ -861,7 +861,7 @@ class ImageController extends Controller {
 	/**
 	 * Generate srcset sources for an image.
 	 *
-	 * @param int $attachment_id The attachment ID.
+	 * @param int   $attachment_id The attachment ID.
 	 * @param array $image_meta The image metadata.
 	 * @param array $size_array The size array.
 	 * @return array The srcset sources.
@@ -873,13 +873,16 @@ class ImageController extends Controller {
 		$main_width  = $size_array[0];
 		$main_height = $size_array[1];
 
-		$main_cdn_url = URLTransformer::get_cdn_url_by_id( $attachment_id, [ 
-			'width'  => $main_width,
-			'height' => $main_height,
-		] );
+		$main_cdn_url = URLTransformer::get_cdn_url_by_id(
+			$attachment_id,
+			[
+				'width'  => $main_width,
+				'height' => $main_height,
+			]
+		);
 
 		if ( $main_cdn_url ) {
-			$sources[ $main_width ] = [ 
+			$sources[ $main_width ] = [
 				'url'        => $main_cdn_url,
 				'descriptor' => 'w',
 				'value'      => $main_width,
@@ -900,13 +903,16 @@ class ImageController extends Controller {
 			// Calculate height based on aspect ratio.
 			$height = $full_height && $full_width ? round( ( $width * $full_height ) / $full_width ) : $main_height;
 
-			$cdn_url = URLTransformer::get_cdn_url_by_id( $attachment_id, [ 
-				'width'  => $width,
-				'height' => $height,
-			] );
+			$cdn_url = URLTransformer::get_cdn_url_by_id(
+				$attachment_id,
+				[
+					'width'  => $width,
+					'height' => $height,
+				]
+			);
 
 			if ( $cdn_url ) {
-				$sources[ $width ] = [ 
+				$sources[ $width ] = [
 					'url'        => $cdn_url,
 					'descriptor' => 'w',
 					'value'      => $width,
@@ -959,7 +965,7 @@ class ImageController extends Controller {
 			// Calculate height based on aspect ratio.
 			$target_height = round( ( $target_width * $aspect_height ) / $aspect_width );
 
-			return [ 
+			return [
 				'width'  => $target_width,
 				'height' => $target_height,
 			];

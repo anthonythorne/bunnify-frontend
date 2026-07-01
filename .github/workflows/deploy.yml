@@ -1,0 +1,32 @@
+name: Deploy to WordPress.org
+
+# Publishes a tagged release to the WordPress.org plugin SVN repository.
+# Requires repository secrets SVN_USERNAME and SVN_PASSWORD (a wordpress.org
+# account with commit access to the `bunnify-frontend` plugin). Until the plugin
+# is approved and the secrets are set, this workflow is a no-op scaffold.
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org SVN
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: WordPress.org plugin deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: bunnify-frontend
+          # The installable plugin lives in a subdirectory of this repo.
+          BUILD_DIR: ./bunnify-frontend
+          # WordPress.org listing assets (banner/icon/screenshots).
+          ASSETS_DIR: .wordpress-org

@@ -1,0 +1,16 @@
+includes:
+	- phpstan-baseline.neon
+
+parameters:
+	level: 5
+	phpVersion: 80200
+	paths:
+		- bunnify-frontend/bunnify-frontend.php
+		- bunnify-frontend/uninstall.php
+		- bunnify-frontend/src/php
+	excludePaths:
+		- bunnify-frontend/build-tools/vendor/*
+	# szepeviktor/phpstan-wordpress (loaded via phpstan/extension-installer)
+	# provides the WordPress function/class/constant stubs.
+	treatPhpDocTypesAsCertain: false
+	reportUnmatchedIgnoredErrors: false

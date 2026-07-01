@@ -12,6 +12,8 @@
  * @since   1.0.0
  */
 
+declare( strict_types=1 );
+
 namespace BunnifyFrontend\Library;
 
 use BunnifyFrontend\Base\Traits\CachingTrait;
@@ -27,7 +29,7 @@ class ImageProcessor {
 	/**
 	 * Allowed image extensions.
 	 */
-	private static array $allowed_extensions = [ 
+	private static array $allowed_extensions = [
 		'gif',
 		'jpg',
 		'jpeg',
@@ -85,7 +87,7 @@ class ImageProcessor {
 				$sizes[ $_size ]['height'] = get_option( $_size . '_size_h' );
 				$sizes[ $_size ]['crop']   = ( 'thumbnail' === $_size ) ? (bool) get_option( 'thumbnail_crop' ) : false;
 			} elseif ( isset( $_wp_additional_image_sizes[ $_size ] ) ) {
-				$sizes[ $_size ] = [ 
+				$sizes[ $_size ] = [
 					'width'  => $_wp_additional_image_sizes[ $_size ]['width'],
 					'height' => $_wp_additional_image_sizes[ $_size ]['height'],
 					'crop'   => $_wp_additional_image_sizes[ $_size ]['crop'],
@@ -94,7 +96,7 @@ class ImageProcessor {
 		}
 
 		// Add full size.
-		$sizes['full'] = [ 
+		$sizes['full'] = [
 			'width'  => null,
 			'height' => null,
 			'crop'   => false,
@@ -104,7 +106,7 @@ class ImageProcessor {
 		if ( is_array( $_wp_additional_image_sizes ) ) {
 			foreach ( $_wp_additional_image_sizes as $size_name => $size_data ) {
 				if ( ! isset( $sizes[ $size_name ] ) ) {
-					$sizes[ $size_name ] = [ 
+					$sizes[ $size_name ] = [
 						'width'  => $size_data['width'],
 						'height' => $size_data['height'],
 						'crop'   => $size_data['crop'],
@@ -132,7 +134,7 @@ class ImageProcessor {
 		// Parse URL and ensure needed keys exist.
 		$url_info = wp_parse_args(
 			$parsed_url,
-			[ 
+			[
 				'scheme' => null,
 				'host'   => null,
 				'port'   => null,
@@ -163,8 +165,9 @@ class ImageProcessor {
 			return false;
 		}
 
-		// Allow filtering of validation results.
-		return apply_filters( 'bunnify_validate_image_url', true, $url, $parsed_url );
+		// Allow filtering of validation results. Cast so a truthy non-bool
+		// filter return cannot trip the strict bool return type.
+		return (bool) apply_filters( 'bunnify_validate_image_url', true, $url, $parsed_url );
 	}
 
 	/**
@@ -188,12 +191,12 @@ class ImageProcessor {
 			// If not found and the URL contains dimensions, try stripping them and looking up again.
 			if ( ! $attachment_id && preg_match( '#(-+\d+x\d+)\.#', $url_without_query ) ) {
 				// Strip dimensions from the URL and try again.
-				$stripped_url = preg_replace( '#(-+\d+x\d+)\.#', '.', $url_without_query );
+				$stripped_url  = preg_replace( '#(-+\d+x\d+)\.#', '.', $url_without_query );
 				$attachment_id = self::attachment_url_to_postid( $stripped_url );
 
 				// If still not found, try adding -scaled suffix (common WordPress pattern).
 				if ( ! $attachment_id && ! strpos( $stripped_url, '-scaled.' ) ) {
-					$scaled_url = str_replace( '.', '-scaled.', $stripped_url );
+					$scaled_url    = str_replace( '.', '-scaled.', $stripped_url );
 					$attachment_id = self::attachment_url_to_postid( $scaled_url );
 				}
 			}
