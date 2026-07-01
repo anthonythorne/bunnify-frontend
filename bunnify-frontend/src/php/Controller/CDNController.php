@@ -17,6 +17,7 @@ namespace BunnifyFrontend\Controller;
 use BunnifyFrontend\Base\Main\Controller;
 use BunnifyFrontend\Base\Traits\DebugTrait;
 use BunnifyFrontend\Library\URLTransformer;
+use BunnifyFrontend\Library\CdnClientTrait;
 
 /**
  * Class CDNController
@@ -25,16 +26,7 @@ use BunnifyFrontend\Library\URLTransformer;
  */
 class CDNController extends Controller {
 	use DebugTrait;
-
-	/**
-	 * URL Transformer instance.
-	 */
-	private ?URLTransformer $url_transformer = null;
-
-	/**
-	 * BunnyCDN hostname.
-	 */
-	private ?string $bunnify_hostname = null;
+	use CdnClientTrait;
 
 	/**
 	 * Initialize WordPress hooks.
@@ -42,27 +34,6 @@ class CDNController extends Controller {
 	public function set_up() {
 		// Register the bunnify_url filter for direct URL processing.
 		add_filter( 'bunnify_url', [ $this, 'cdn_url' ], 10, 3 );
-	}
-
-	/**
-	 * Initialize CDN functionality.
-	 *
-	 * @return bool True if CDN is properly initialized, false otherwise.
-	 */
-	private function init_cdn(): bool {
-		if ( null !== $this->url_transformer ) {
-			return true;
-		}
-
-		$this->bunnify_hostname = get_option( 'bunnify_hostname' );
-
-		// Only proceed if hostname is configured.
-		if ( empty( $this->bunnify_hostname ) ) {
-			return false;
-		}
-
-		$this->url_transformer = new URLTransformer( $this->bunnify_hostname );
-		return true;
 	}
 
 	/**

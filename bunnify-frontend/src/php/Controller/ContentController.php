@@ -20,6 +20,7 @@ use BunnifyFrontend\Base\Traits\DebugTrait;
 use BunnifyFrontend\Base\Traits\CachingTrait;
 use BunnifyFrontend\Library\URLTransformer;
 use BunnifyFrontend\Library\ImageProcessor;
+use BunnifyFrontend\Library\CdnClientTrait;
 
 /**
  * Class ContentController
@@ -29,16 +30,7 @@ use BunnifyFrontend\Library\ImageProcessor;
 class ContentController extends Controller {
 	use DebugTrait;
 	use CachingTrait;
-
-	/**
-	 * URL Transformer instance.
-	 */
-	private ?URLTransformer $url_transformer = null;
-
-	/**
-	 * BunnyCDN hostname.
-	 */
-	private ?string $bunnify_hostname = null;
+	use CdnClientTrait;
 
 	/**
 	 * Initialize WordPress hooks for content processing.
@@ -58,27 +50,6 @@ class ContentController extends Controller {
 
 		// Filter gallery block specifically to ensure original images are used.
 		add_filter( 'render_block_core/gallery', [ $this, 'filter_gallery_block' ], 20, 2 );
-	}
-
-	/**
-	 * Initialize CDN functionality.
-	 *
-	 * @return bool True if CDN is properly initialized, false otherwise.
-	 */
-	private function init_cdn(): bool {
-		if ( null !== $this->url_transformer ) {
-			return true;
-		}
-
-		$this->bunnify_hostname = get_option( 'bunnify_hostname' );
-
-		// Only proceed if hostname is configured.
-		if ( empty( $this->bunnify_hostname ) ) {
-			return false;
-		}
-
-		$this->url_transformer = new URLTransformer( $this->bunnify_hostname );
-		return true;
 	}
 
 	/**
