@@ -227,22 +227,10 @@ class ImageController extends Controller {
 
 		// Handle string sizes (e.g., 'thumbnail', 'medium', '16:9-768').
 		if ( is_string( $size ) || is_int( $size ) ) {
-			$width  = false;
-			$height = false;
-
-			// Check if it's a registered WordPress image size.
-			if ( array_key_exists( $size, $image_sizes ) ) {
-				$size_data = $image_sizes[ $size ];
-				$width     = $size_data['width'] ?? false;
-				$height    = $size_data['height'] ?? false;
-			} else {
-				// Handle custom aspect ratio sizes (e.g., '16:9-768').
-				$custom_size = $this->parse_custom_size( $size );
-				if ( $custom_size ) {
-					$width  = $custom_size['width'];
-					$height = $custom_size['height'];
-				}
-			}
+			// Resolve width/height from a registered size or a custom size string.
+			$dimensions = $this->resolve_size_dimensions( $size, $image_sizes );
+			$width      = $dimensions['width'];
+			$height     = $dimensions['height'];
 
 			// Build CDN arguments.
 			$cdn_args = [];
@@ -374,22 +362,10 @@ class ImageController extends Controller {
 
 		// Handle string sizes (e.g., 'thumbnail', 'medium', '16:9-768').
 		if ( is_string( $size ) || is_int( $size ) ) {
-			$width  = false;
-			$height = false;
-
-			// Check if it's a registered WordPress image size.
-			if ( array_key_exists( $size, $image_sizes ) ) {
-				$size_data = $image_sizes[ $size ];
-				$width     = isset( $size_data['width'] ) ? $size_data['width'] : false;
-				$height    = isset( $size_data['height'] ) ? $size_data['height'] : false;
-			} else {
-				// Handle custom aspect ratio sizes (e.g., '16:9-768').
-				$custom_size = $this->parse_custom_size( $size );
-				if ( $custom_size ) {
-					$width  = $custom_size['width'];
-					$height = $custom_size['height'];
-				}
-			}
+			// Resolve width/height from a registered size or a custom size string.
+			$dimensions = $this->resolve_size_dimensions( $size, $image_sizes );
+			$width      = $dimensions['width'];
+			$height     = $dimensions['height'];
 
 			// Build CDN arguments.
 			$cdn_args = [];
@@ -947,6 +923,38 @@ class ImageController extends Controller {
 		} else {
 			return '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, (max-width: 1200px) 33vw, ' . $width . 'px';
 		}
+	}
+
+	/**
+	 * Resolve width/height for a string size from a registered image size or a
+	 * custom aspect-ratio size (e.g. '16:9-768').
+	 *
+	 * @param string $size        The requested size name.
+	 * @param array  $image_sizes Registered image sizes keyed by name.
+	 * @return array Resolved dimensions as [ 'width' => mixed, 'height' => mixed ]; false when unknown.
+	 */
+	private function resolve_size_dimensions( string $size, array $image_sizes ): array {
+		$width  = false;
+		$height = false;
+
+		// Check if it's a registered WordPress image size.
+		if ( array_key_exists( $size, $image_sizes ) ) {
+			$size_data = $image_sizes[ $size ];
+			$width     = $size_data['width'] ?? false;
+			$height    = $size_data['height'] ?? false;
+		} else {
+			// Handle custom aspect ratio sizes (e.g., '16:9-768').
+			$custom_size = $this->parse_custom_size( $size );
+			if ( $custom_size ) {
+				$width  = $custom_size['width'];
+				$height = $custom_size['height'];
+			}
+		}
+
+		return [
+			'width'  => $width,
+			'height' => $height,
+		];
 	}
 
 	/**
