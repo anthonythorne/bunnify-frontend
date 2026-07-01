@@ -10,6 +10,9 @@ composer.phar
 # NOTE: bunnify-frontend/build-tools/vendor/ is intentionally NOT ignored —
 # it is the plugin's minimal runtime autoloader and ships with the plugin.
 
+# --- Local-only AI working context (cross-project prompts/status; never shipped) ---
+docs/00-ai-context/
+
 # --- Editors / IDEs ---
 .vscode/
 .idea/
