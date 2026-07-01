@@ -28,8 +28,8 @@ $autoload_file = __DIR__ . '/build-tools/vendor/autoload.php';
 
 // Bail early if the file does not exist.
 if ( ! file_exists( $autoload_file ) ) {
-			return;
-		}
+	return;
+}
 
 require_once $autoload_file;
 
@@ -47,11 +47,12 @@ $bunnify_app = new \BunnifyFrontend\Base\Main\Application(
 	__DIR__,
 	[
 		new \BunnifyFrontend\Controller\CDNController(),
+		new \BunnifyFrontend\Controller\WPResourceHintsController(),
 		new \BunnifyFrontend\Controller\ContentController(),
 		new \BunnifyFrontend\Controller\ImageController(),
 		new \BunnifyFrontend\Controller\RESTController(),
 		new \BunnifyFrontend\Controller\SettingsController(),
-	]
+	],
 );
 
 global $bunnify_app_config;

@@ -138,6 +138,20 @@ class URLTransformer {
 			return true;
 		}
 
+		/**
+		 * Allow opt-in processing of non-upload local asset URLs.
+		 *
+		 * Default behavior remains uploads-only unless a project explicitly
+		 * enables additional paths via this filter.
+		 *
+		 * @param bool  $allow      Whether to allow this non-upload URL.
+		 * @param array $url_parts  Parsed URL parts for the candidate URL.
+		 * @param array $upload_dir WordPress upload directory data.
+		 */
+		if ( true === apply_filters( 'bunnify_allow_non_upload_url', false, $url_parts, $upload_dir ) ) {
+			return true;
+		}
+
 		return false;
 	}
 
@@ -182,7 +196,7 @@ class URLTransformer {
 
 		$query_parts = [];
 
-		// Map WordPress image size arguments to CDN parameters.
+		// Map core WordPress image size arguments first.
 		if ( isset( $args['width'] ) ) {
 			$query_parts['width'] = (int) $args['width'];
 		}
@@ -191,6 +205,28 @@ class URLTransformer {
 		}
 		if ( isset( $args['crop'] ) && $args['crop'] ) {
 			$query_parts['c'] = 1;
+		}
+
+		/**
+		 * Pass through additional Bunny transform arguments.
+		 *
+		 * This keeps backwards compatibility for width/height/crop while allowing
+		 * quality/format and any other known scalar transform args to reach the CDN.
+		 */
+		foreach ( $args as $key => $value ) {
+			$key = is_string( $key ) ? trim( $key ) : '';
+			if ( '' === $key || isset( $query_parts[ $key ] ) ) {
+				continue;
+			}
+
+			if ( is_bool( $value ) ) {
+				$query_parts[ $key ] = $value ? '1' : '0';
+				continue;
+			}
+
+			if ( is_scalar( $value ) && '' !== (string) $value ) {
+				$query_parts[ $key ] = (string) $value;
+			}
 		}
 
 		return http_build_query( $query_parts );

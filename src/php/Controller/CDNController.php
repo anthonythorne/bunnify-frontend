@@ -42,9 +42,6 @@ class CDNController extends Controller {
 	public function set_up() {
 		// Register the bunnify_url filter for direct URL processing.
 		add_filter( 'bunnify_url', [ $this, 'cdn_url' ], 10, 3 );
-
-		// DNS prefetch for BunnyCDN hostname.
-		add_filter( 'wp_resource_hints', [ $this, 'add_dns_prefetch' ], 10, 2 );
 	}
 
 	/**
@@ -121,20 +118,5 @@ class CDNController extends Controller {
 		$this->debug_log( 'cdn_url returning (fallback): ' . $final_url . ' | original args: ' . print_r( $args, true ), 'cdn_url' );
 
 		return $final_url;
-	}
-
-	/**
-	 * Add DNS prefetch for BunnyCDN hostname.
-	 *
-	 * @param array  $hints Array of resource hints.
-	 * @param string $relation_type The relation type.
-	 * @return array Modified hints array.
-	 */
-	public function add_dns_prefetch( array $hints, string $relation_type ): array {
-		if ( 'dns-prefetch' === $relation_type && $this->init_cdn() ) {
-			$hints[] = $this->bunnify_hostname;
-		}
-
-		return $hints;
 	}
 }

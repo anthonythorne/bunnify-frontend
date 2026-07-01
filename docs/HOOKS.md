@@ -10,7 +10,7 @@ This document lists all WordPress hooks and filters used by the Bunnify Frontend
 - `admin_init` - Registers settings and fields
 
 ### Filters
-- `wp_resource_hints` - Adds DNS prefetch hints
+- `wp_resource_hints` - Adds CDN preconnect hints and removes duplicate dns-prefetch for the hostname
 - `image_downsize` - Processes image size requests
 - `wp_get_attachment_image_src` - Processes attachment image sources
 - `wp_get_attachment_image` - Processes attachment image HTML
@@ -184,6 +184,18 @@ add_filter( 'bunnify_any_extension_for_domain', function( $allow, $domain ) {
     // Return true to allow any extension for this domain
     return $allow;
 }, 10, 2 );
+```
+
+### `bunnify_allow_non_upload_url`
+Allows opt-in CDN processing for local URLs outside `/wp-content/uploads/`.
+
+```php
+add_filter( 'bunnify_allow_non_upload_url', function( $allow, $url_parts, $upload_dir ) {
+    if ( ! empty( $url_parts['path'] ) && strpos( $url_parts['path'], '/wp-content/themes/my-theme/dist/images/' ) === 0 ) {
+        return true;
+    }
+    return $allow;
+}, 10, 3 );
 ```
 
 ### `bunnify_local_dev_mode_check`
