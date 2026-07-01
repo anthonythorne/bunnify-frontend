@@ -1,0 +1,50 @@
+# Changelog
+
+All notable changes to this project are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres
+to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Repository restructure: the installable plugin now lives in the
+  `bunnify-frontend/` subdirectory; the repo root holds docs and tooling.
+- Development toolchain: PHPCS (WordPress Coding Standards), PHPStan (level 5 +
+  baseline) and a PHPUnit unit suite (Brain Monkey), wired into GitHub Actions
+  CI across PHP 8.2 and 8.3.
+- WordPress.org packaging: `readme.txt`, `LICENSE`, a multisite-aware
+  `uninstall.php`, `.distignore`, a `bin/build.sh` zip builder, and a
+  `deploy.yml` workflow that publishes tagged releases to the plugin SVN.
+- `bunnify_allow_non_upload_url` filter for opt-in CDN processing of local
+  assets outside `/wp-content/uploads/`.
+- Pass-through of additional Bunny transform arguments (quality, format, …)
+  alongside the core width/height/crop mapping.
+- Project wiki under `docs/` and a `docs/blueprints/` roadmap.
+
+### Changed
+- Resource hints moved from `dns-prefetch` to a dedicated
+  `WPResourceHintsController` that adds a `preconnect` (skipping same-origin)
+  and strips the redundant `dns-prefetch` for the CDN hostname.
+- `declare(strict_types=1)` added to the `URLTransformer` and `ImageProcessor`
+  libraries (with defensive casts on filtered returns), plus a
+  behaviour-preserving WordPress Coding Standards pass across the plugin.
+
+### Packaging note
+- Consumers that copy this repository into `wp-content/plugins/` must now sync
+  from the `bunnify-frontend/` subdirectory rather than the repo root.
+
+### Known issues
+- A truthy `crop` transform argument currently emits both `c=1` and `crop=1`.
+- See [`docs/blueprints/0001-enterprise-restructure`](docs/blueprints/0001-enterprise-restructure/README.md)
+  for the full list and remediation plan.
+
+## [1.0.0] - 2026-07-01
+
+### Added
+- Initial release. Frontend-only BunnyCDN URL rewriting for attachments,
+  post content, blocks, galleries and image widgets; responsive `srcset`/`sizes`
+  rewriting; a settings screen under **Media → BunnyCDN**; local-development
+  mode; and an extensive filter API.
+
+[Unreleased]: https://github.com/anthonythorne/bunnify-frontend/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/anthonythorne/bunnify-frontend/releases/tag/v1.0.0
