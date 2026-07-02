@@ -146,4 +146,56 @@ final class URLTransformerTest extends TestCase {
 
 		$this->assertFalse( URLTransformer::validate_image_url( 'https://example.com/a.txt' ) );
 	}
+
+	/**
+	 * Reset the static CDN state get_cdn_url_by_id() caches per request.
+	 */
+	private function reset_static_cdn(): void {
+		foreach ( array( 'static_instance', 'static_hostname' ) as $prop ) {
+			$property = new \ReflectionProperty( URLTransformer::class, $prop );
+			$property->setAccessible( true );
+			$property->setValue( null, null );
+		}
+	}
+
+	/**
+	 * Stub get_option() from a map, honouring the caller's default for
+	 * options absent from the map.
+	 *
+	 * @param array $options Option values keyed by option name.
+	 */
+	private function stub_options( array $options ): void {
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default = false ) use ( $options ) {
+				return array_key_exists( $name, $options ) ? $options[ $name ] : $default;
+			}
+		);
+	}
+
+	/**
+	 * When the master switch is off, get_cdn_url_by_id() must return null so
+	 * callers leave their input untouched. Returning the origin URL (the old
+	 * behaviour) short-circuited image_downsize with the FULL-SIZE original,
+	 * collapsing every intermediate size on disabled installs.
+	 */
+	public function test_get_cdn_url_by_id_null_when_disabled(): void {
+		$this->reset_static_cdn();
+		$this->stub_options(
+			array(
+				'bunnify_enabled'  => '0',
+				'bunnify_hostname' => 'cdn.example.com',
+			)
+		);
+		Functions\when( 'wp_get_attachment_url' )->justReturn( 'https://origin.example.com/wp-content/uploads/a.jpg' );
+
+		$this->assertNull( URLTransformer::get_cdn_url_by_id( 42, array( 'width' => 300 ) ) );
+	}
+
+	public function test_get_cdn_url_by_id_null_when_hostname_unconfigured(): void {
+		$this->reset_static_cdn();
+		$this->stub_options( array() );
+		Functions\when( 'wp_get_attachment_url' )->justReturn( 'https://origin.example.com/wp-content/uploads/a.jpg' );
+
+		$this->assertNull( URLTransformer::get_cdn_url_by_id( 42, array( 'width' => 300 ) ) );
+	}
 }

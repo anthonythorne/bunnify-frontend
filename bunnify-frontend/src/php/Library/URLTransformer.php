@@ -451,7 +451,11 @@ class URLTransformer {
 			return false;
 		}
 
-		self::$static_hostname = get_option( 'bunnify_hostname' );
+		// Defensive cast: get_option() returns false for a missing option and
+		// this file is strict_types, so assigning it raw to the ?string
+		// property fatals on installs that never saved a hostname. The cast
+		// replicates the pre-strict coercion (false → '').
+		self::$static_hostname = (string) get_option( 'bunnify_hostname', '' );
 
 		// Only proceed if hostname is configured.
 		if ( empty( self::$static_hostname ) ) {
@@ -468,7 +472,9 @@ class URLTransformer {
 	 * @param int          $attachment_id The attachment ID.
 	 * @param array|string $args CDN arguments.
 	 * @param string|null  $scheme URL scheme.
-	 * @return string|null The CDN URL or null if not found.
+	 * @return string|null The CDN URL, or null if the attachment has no URL or
+	 *                     CDN rewriting is unavailable (master switch off, or
+	 *                     no hostname configured).
 	 */
 	public static function get_cdn_url_by_id( int $attachment_id, array|string $args = [], ?string $scheme = null ): ?string {
 		$original_url = wp_get_attachment_url( $attachment_id );
@@ -476,8 +482,13 @@ class URLTransformer {
 			return null;
 		}
 
+		// Null — not the origin URL — when the CDN is unavailable: every caller
+		// treats an empty return as "leave the input untouched". Falling back to
+		// $original_url here would short-circuit core filters (image_downsize,
+		// content rewriting) with the FULL-SIZE origin URL, collapsing every
+		// intermediate size whenever the plugin is disabled or unconfigured.
 		if ( ! self::init_static_cdn() ) {
-			return $original_url;
+			return null;
 		}
 
 		// Get the true original image URL by stripping any suffixes.
