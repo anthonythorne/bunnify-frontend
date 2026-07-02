@@ -215,10 +215,14 @@ class URLTransformer {
 		 *
 		 * This keeps backwards compatibility for width/height/crop while allowing
 		 * quality/format and any other known scalar transform args to reach the CDN.
+		 * The core keys are handled by the mapping above and never passed through
+		 * raw — `crop` in particular maps to `c`, so re-adding it here would emit
+		 * both `c=1` and `crop=1`.
 		 */
+		$mapped_core_keys = [ 'width', 'height', 'crop' ];
 		foreach ( $args as $key => $value ) {
 			$key = is_string( $key ) ? trim( $key ) : '';
-			if ( '' === $key || isset( $query_parts[ $key ] ) ) {
+			if ( '' === $key || in_array( $key, $mapped_core_keys, true ) || isset( $query_parts[ $key ] ) ) {
 				continue;
 			}
 

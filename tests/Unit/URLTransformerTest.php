@@ -78,19 +78,33 @@ final class URLTransformerTest extends TestCase {
 	}
 
 	/**
-	 * Characterisation test locking current (v1.0.0) behaviour: a truthy `crop`
-	 * emits BOTH the `c=1` shorthand and, via the generic passthrough, `crop=1`.
-	 * Flagged as a known quirk in the enterprise-restructure blueprint.
+	 * A truthy `crop` maps to the `c=1` shorthand only. v1.0.0 also leaked a
+	 * raw `crop=1` through the generic passthrough (the known issue flagged in
+	 * the enterprise-restructure blueprint); the passthrough now skips the
+	 * mapped core keys.
 	 */
-	public function test_build_query_string_crop_emits_both_c_and_crop(): void {
+	public function test_build_query_string_truthy_crop_emits_only_c(): void {
 		$this->assertSame(
-			'width=300&height=200&c=1&crop=1',
+			'width=300&height=200&c=1',
 			$this->build_query_string(
 				$this->make(),
 				array(
 					'width'  => 300,
 					'height' => 200,
 					'crop'   => true,
+				)
+			)
+		);
+	}
+
+	public function test_build_query_string_falsy_crop_emits_no_crop_param(): void {
+		$this->assertSame(
+			'width=300',
+			$this->build_query_string(
+				$this->make(),
+				array(
+					'width' => 300,
+					'crop'  => false,
 				)
 			)
 		);
