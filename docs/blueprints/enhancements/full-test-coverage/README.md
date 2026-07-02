@@ -15,7 +15,10 @@
 > filter-contract suite, the coverage gate, and the WordPress-version matrix
 > (Phases 2–5) remain open — the filter-contract suite should land **before**
 > the [[di-container-service-layer]] refactor, since it freezes the hook
-> contract that refactor must preserve.
+> contract that refactor must preserve. Also superseded: this doc's Phase 2
+> caveats about `build-tools/vendor` (composer install in CI, the silent
+> bootstrap return) — the plugin now ships a plugin-root `autoload.php` per
+> [[wporg-runtime-autoloader]], which always exists in a checkout.
 
 ## Summary
 

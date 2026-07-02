@@ -42,3 +42,24 @@ jobs:
 
       - name: Unit tests (PHPUnit)
         run: composer test
+
+  package:
+    name: Package (dist zip guards)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build distributable
+        run: bash bin/build.sh
+
+      - name: Assert zip contents
+        run: |
+          unzip -l dist/bunnify-frontend.zip > listing.txt
+          grep -q "bunnify-frontend/autoload.php" listing.txt
+          grep -q "bunnify-frontend/bunnify-frontend.php" listing.txt
+          grep -q "bunnify-frontend/readme.txt" listing.txt
+          if grep -E "composer\.(json|lock)|build-tools/|README\.md|\.distignore" listing.txt; then
+            echo "dev/packaging cruft found in the zip" >&2
+            exit 1
+          fi

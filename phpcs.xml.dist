@@ -8,6 +8,7 @@
 		for now (see docs/blueprints/enhancements/base-framework-standards).
 	-->
 	<file>bunnify-frontend/bunnify-frontend.php</file>
+	<file>bunnify-frontend/autoload.php</file>
 	<file>bunnify-frontend/uninstall.php</file>
 	<file>bunnify-frontend/src/php/Controller</file>
 	<file>bunnify-frontend/src/php/Library</file>
@@ -15,7 +16,6 @@
 	<file>bunnify-frontend/src/php/Function</file>
 
 	<!-- Never lint vendored or generated code. -->
-	<exclude-pattern>*/build-tools/vendor/*</exclude-pattern>
 	<exclude-pattern>*/vendor/*</exclude-pattern>
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
 	<exclude-pattern>*/tests/*</exclude-pattern>

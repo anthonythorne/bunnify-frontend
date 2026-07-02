@@ -28,7 +28,7 @@ user-facing description and the [wiki](docs/) for developer documentation.
 │   ├── uninstall.php
 │   ├── LICENSE
 │   ├── .distignore          # files excluded from the distributed zip
-│   ├── build-tools/vendor/  # minimal runtime autoloader (ships)
+│   ├── autoload.php         # hand-written runtime PSR-4 loader (ships)
 │   └── src/php/             # Base framework, Controllers, Library, Model
 ├── docs/                    # project wiki + blueprints (not shipped)
 │   └── blueprints/          # design docs & roadmap

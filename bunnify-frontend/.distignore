@@ -1,8 +1,9 @@
 # Files and folders excluded from the WordPress.org distribution build.
 #
-# Consumed by 10up/action-wordpress-plugin-deploy (rsync --exclude). Paths are
-# relative to this plugin directory. build-tools/vendor/ is intentionally kept:
-# it is the runtime autoloader the plugin loads on boot.
+# Consumed by 10up/action-wordpress-plugin-deploy (rsync --exclude) and
+# bin/build.sh. Paths are relative to this plugin directory. The runtime
+# autoloader is the hand-written autoload.php at the plugin root — nothing
+# Composer-related ships.
 
 # Development documentation (the wp.org listing is built from readme.txt).
 README.md
@@ -12,10 +13,6 @@ README.md
 .gitignore
 .git
 .github
-
-# Composer manifests are not needed at runtime (only vendor/autoload.php is).
-build-tools/composer.json
-build-tools/composer.lock
 
 # OS / editor cruft.
 .DS_Store

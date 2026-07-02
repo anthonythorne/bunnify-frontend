@@ -25,10 +25,10 @@ wp-settings.php loads the plugin
         │
         ▼
 bunnify-frontend.php  (entry file)
-  1. require build-tools/vendor/autoload.php   (PSR-4 runtime autoloader)
+  1. require autoload.php                      (hand-written PSR-4 runtime loader)
   2. guard: bail if BunnifyFrontend\APP_NAME already defined
   3. define APP_NAME = basename(__DIR__)
-  4. new Base\Main\Application( APP_NAME, __DIR__, [ …6 controllers… ] )
+  4. new Base\Main\Application( APP_NAME, __DIR__, [ …5 controllers… ] )
         │
         ▼
 Base\Main\Application::__construct()
@@ -61,9 +61,9 @@ Key facts:
   matching trait (`RouteTrait` / `RESTTrait` / `AdminAjaxTrait`). None of Bunnify's controllers use
   those traits today, so no services are injected — but the mechanism is the framework's substitute
   for a DI container.
-- The autoloader is loaded from `build-tools/vendor/autoload.php` (a minimal PSR-4 map that ships in
-  the zip), guarded by the `APP_NAME` constant so a double-load (e.g. plugin + bundled dependency)
-  is a no-op.
+- The autoloader is the hand-written `autoload.php` at the plugin root (a ~30-line PSR-4 map onto
+  `src/php/` plus the `Function/*.php` side-effect includes — no Composer artefacts ship), guarded
+  by the `APP_NAME` constant so a double-load (e.g. plugin + bundled dependency) is a no-op.
 
 ---
 
@@ -74,13 +74,13 @@ bunnify-frontend/                     ← installable plugin (ships to WordPress
 ├── bunnify-frontend.php              ← entry file: autoload + boot Application
 ├── readme.txt                        ← wp.org readme (source of truth for version)
 ├── uninstall.php                     ← deletes bunnify_* options
-├── build-tools/vendor/               ← runtime PSR-4 autoloader (ships)
+├── autoload.php                      ← hand-written runtime PSR-4 loader (ships)
 └── src/php/
     ├── Base/                         ← mini-MVC framework (Main, Library, Traits, Model)
     │   ├── Main/{Application,Controller,View}.php
     │   ├── Library/{Config,Route,REST,AdminAjax}.php
     │   └── Traits/{CachingTrait,DebugTrait,RouteTrait,RESTTrait,…}.php
-    ├── Controller/                   ← the 6 controllers (WP hook wiring lives here)
+    ├── Controller/                   ← the 5 controllers (WP hook wiring lives here)
     ├── Library/{URLTransformer,ImageProcessor}.php   ← core logic
     ├── Model/PostType/Attachment.php ← attachment post-type constant
     └── Function/AutoLoad.php

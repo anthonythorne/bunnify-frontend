@@ -69,29 +69,21 @@ unzip -l dist/bunnify-frontend.zip
 > runs its own `rsync` against `BUILD_DIR` honouring the same `.distignore`. Keep
 > `.distignore` correct and both paths agree.
 
-### What `.distignore` excludes — and why `build-tools/vendor` stays
+### What `.distignore` excludes
 
 [`.distignore`](../bunnify-frontend/.distignore) strips development and packaging
 cruft from the shipped tree:
 
 - `README.md` — the wp.org listing is built from `readme.txt`, not `README.md`.
 - VCS / packaging metadata — `.distignore`, `.gitignore`, `.git`, `.github`.
-- `build-tools/composer.json` and `build-tools/composer.lock` — Composer
-  *manifests* are not needed at runtime.
 - OS/editor cruft — `.DS_Store`, `Thumbs.db`.
 
-**`build-tools/vendor/` is intentionally kept.** It is not dev tooling — it is the
-minimal, zero-dependency PSR-4 autoloader the plugin `require`s on boot
-(`bunnify-frontend.php` loads `build-tools/vendor/autoload.php`). Removing it
-would break activation. Only the *manifests* are stripped; the generated
-`vendor/` plumbing ships.
-
-> This `build-tools/` naming is a known wart — it reads like something that
-> should be excluded, and the generated autoload map uses `..` traversal into
-> `../src/php`. The planned cleanup (move the loader to an obviously-runtime path
-> and drop the Composer footprint) is specced in
-> [wporg-runtime-autoloader](blueprints/enhancements/wporg-runtime-autoloader/README.md).
-> Until that lands, **do not** add `build-tools/vendor/` to `.distignore`.
+The runtime autoloader is the hand-written **`autoload.php` at the plugin root**
+(PSR-4 onto `src/php/` plus the `Function/*.php` side-effect includes) — there
+is no Composer footprint left to strip. `bin/build.sh` additionally hard-fails
+if any `composer.json`/`composer.lock`/`build-tools/`/`vendor/` sneaks into the
+stage, or if a runtime essential is missing, and the CI `package` job runs the
+same build against every push.
 
 ## WordPress.org release flow
 
@@ -154,7 +146,8 @@ the consumer is the built artifact: unzip `dist/bunnify-frontend.zip` (or pull
 the exact tagged tree) so the copy tracks *built* output, including the correct
 autoloader path. See the migration note in
 [wporg-runtime-autoloader](blueprints/enhancements/wporg-runtime-autoloader/README.md)
-for why the copy must follow the build rather than cherry-pick `build-tools/`.
+for the packaging history (the former `build-tools/vendor/` Composer loader
+was replaced by the plugin-root `autoload.php` on 2026-07-02).
 
 ## Release checklist
 
@@ -176,8 +169,9 @@ Do these from a clean, up-to-date `main` working tree.
 6. **Build and inspect the zip locally:**
    ```bash
    composer build
-   unzip -l dist/bunnify-frontend.zip   # verify build-tools/vendor present,
-                                        # composer.json / .git / README.md absent
+   unzip -l dist/bunnify-frontend.zip   # verify autoload.php present; composer
+                                        # manifests / .git / README.md absent
+                                        # (build.sh guards enforce this too)
    ```
    Optionally run the official [Plugin Check](https://wordpress.org/plugins/plugin-check/)
    against the unzipped tree.
@@ -200,7 +194,7 @@ Do these from a clean, up-to-date `main` working tree.
 ## Related
 
 - [wporg-runtime-autoloader](blueprints/enhancements/wporg-runtime-autoloader/README.md)
-  — planned autoloader/packaging cleanup (drop `build-tools/`, ship a clean
-  runtime loader, add a packaging smoke test).
+  — the autoloader/packaging cleanup, implemented 2026-07-02 (dropped
+  `build-tools/`, hand-written plugin-root loader, build guards + CI package job).
 - [`bin/build.sh`](../bin/build.sh), [`.distignore`](../bunnify-frontend/.distignore),
   [`deploy.yml`](../.github/workflows/deploy.yml) — the moving parts referenced above.

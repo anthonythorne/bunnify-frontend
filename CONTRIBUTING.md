@@ -98,9 +98,8 @@ Tests live in [`tests/Unit/`](tests/Unit/) under the
 
 ### The Base framework is vendored
 
-`bunnify-frontend/src/php/Base` and the `build-tools/vendor/` runtime autoloader
-are treated as **vendored dependencies** and are excluded from linting and
-analysis. Avoid editing `Base/` as part of a feature change. If you believe the
+`bunnify-frontend/src/php/Base` is treated as a **vendored dependency** and is
+excluded from linting and analysis. Avoid editing `Base/` as part of a feature change. If you believe the
 framework itself needs work, that is tracked separately under
 [`docs/blueprints/`](docs/blueprints/) — start a discussion there rather than
 patching it inline.

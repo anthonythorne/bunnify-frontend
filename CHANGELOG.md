@@ -49,6 +49,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `class_uses()`, missing traits inherited from a parent class or composed by
   another trait.
 
+### Changed (packaging)
+- The runtime autoloader is now a hand-written `autoload.php` at the plugin
+  root; the committed `build-tools/vendor` Composer autoloader (and its `..`
+  path traversal and manual classmap refreshes) is gone. `bin/build.sh` now
+  hard-fails if Composer artefacts leak into the distributable or runtime
+  essentials are missing, and CI gained a `package` job asserting the zip
+  contents. Consumers that copied `build-tools/` should sync the whole plugin
+  directory.
+
 ### Removed
 - The never-functional `RESTController` (an abandoned port of Jetpack
   Photon's disable-rewriting-during-REST guard; three no-op callbacks on

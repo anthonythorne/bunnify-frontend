@@ -7,8 +7,8 @@ composer.phar
 .phpcs.cache
 .phpstan.cache/
 
-# NOTE: bunnify-frontend/build-tools/vendor/ is intentionally NOT ignored —
-# it is the plugin's minimal runtime autoloader and ships with the plugin.
+# NOTE: the plugin's runtime autoloader is the hand-written
+# bunnify-frontend/autoload.php — no Composer vendor dir ships.
 
 # --- Local-only AI working context (cross-project prompts/status; never shipped) ---
 docs/00-ai-context/

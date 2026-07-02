@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Load package, first check if this is standalone, and then check if this is a dependency.
  */
-$bunnify_autoload_file = __DIR__ . '/build-tools/vendor/autoload.php';
+$bunnify_autoload_file = __DIR__ . '/autoload.php';
 
 // Bail early if the file does not exist.
 if ( ! file_exists( $bunnify_autoload_file ) ) {

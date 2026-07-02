@@ -14,7 +14,7 @@ bunnify-frontend/                 # repo root (dev workspace, NOT shipped)
 │   ├── bunnify-frontend.php      # entry file
 │   ├── readme.txt                # WordPress.org readme (source of truth for version)
 │   ├── uninstall.php, LICENSE, .distignore
-│   ├── build-tools/vendor/       # minimal runtime PSR-4 autoloader (ships)
+│   ├── autoload.php              # hand-written runtime PSR-4 loader (ships)
 │   └── src/php/{Base,Controller,Library,Model,Function}
 ├── docs/                         # the repo wiki, incl. docs/blueprints/
 ├── tests/Unit/                   # PHPUnit unit tests (Brain Monkey; WP not booted)
@@ -50,7 +50,7 @@ composer install
 
 This installs the dev-only toolchain into `vendor/` (PHPCS + WordPress Coding Standards, PHPStan + `phpstan-wordpress`, PHPUnit, Brain Monkey, Yoast PHPUnit polyfills) and generates the autoloaders. The `dealerdirect/phpcodesniffer-composer-installer` and `phpstan/extension-installer` plugins are pre-allowed in `composer.json`, so PHPCS standards and the PHPStan WordPress extension are wired up automatically.
 
-The plugin itself has **no** runtime Composer dependencies — it ships its own minimal PSR-4 autoloader under `bunnify-frontend/build-tools/vendor/`. The root `vendor/` is purely for development.
+The plugin itself has **no** runtime Composer dependencies — it ships its own hand-written PSR-4 loader at `bunnify-frontend/autoload.php`. The root `vendor/` is purely for development.
 
 ## Composer commands
 
@@ -158,7 +158,7 @@ composer build
 This runs `bin/build.sh`, which:
 
 1. Cleans the `build/` and `dist/` directories.
-2. `rsync`s the plugin subdir (`bunnify-frontend/`) into a staging folder, honouring the exclusion patterns in `bunnify-frontend/.distignore` (dev/test files are stripped; the runtime `build-tools/vendor/` autoloader is kept).
+2. `rsync`s the plugin subdir (`bunnify-frontend/`) into a staging folder, honouring the exclusion patterns in `bunnify-frontend/.distignore`, then hard-fails if any Composer manifest, `build-tools/`, or `vendor/` survives — or if a runtime essential (entry file, `autoload.php`, `readme.txt`, …) is missing.
 3. Zips the staging folder so the archive is rooted at a single `bunnify-frontend/` directory — the layout WordPress expects when installing from a zip.
 
 Output: **`dist/bunnify-frontend.zip`**. The script prints the final path and size.

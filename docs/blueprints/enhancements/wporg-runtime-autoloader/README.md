@@ -1,9 +1,25 @@
 # Runtime autoloader packaging for WordPress.org review
 
-- **Status:** Proposed
+- **Status:** Implemented (Option B, 2026-07-02)
 - **Created:** 2026-07-01
-- **Owner:** _unassigned_
+- **Owner:** Anthony Thorne
 - **Related:** [[base-framework-standards]] (the `src/php/Base` mini-framework this loader has to resolve), [[cdn-config-consolidation]] (a sibling wp.org-prep cleanup)
+
+> **Update (2026-07-02): Option B implemented.** The plugin now boots from a
+> hand-written `autoload.php` at the plugin root (PSR-4 onto `src/php/` via a
+> pure, unit-tested path mapper `BunnifyFrontend\autoload_class_path()`, plus
+> the `Function/*.php` side-effect includes). `build-tools/` is deleted from
+> source, `.distignore`/`.gitignore`/PHPCS/PHPStan updated, and `bin/build.sh`
+> hard-fails if any Composer manifest, `build-tools/`, or `vendor/` survives
+> staging — or a runtime essential is missing. A CI `package` job builds the
+> zip and asserts its contents on every push. Tests:
+> `tests/Unit/AutoloaderTest.php`, including an inverse walk proving every
+> `src/php/` class file is reachable by the loader (the guarantee the old
+> hand-committed classmap silently lacked — see commit 0446c59's manual
+> refresh). Not done from the plan: the packaging PHPUnit test (superseded by
+> the build.sh guards + CI job) and Plugin Check in CI (deferred to the wp.org
+> submission checklist). The Care to Change consumer's `bunnify-sync.sh` no
+> longer needs its Composer regenerate step — updated the same day.
 
 ## Summary
 
