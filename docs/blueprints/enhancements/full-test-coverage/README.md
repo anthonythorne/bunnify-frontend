@@ -1,9 +1,21 @@
 # Comprehensive Automated Test Coverage
 
-- **Status:** Proposed
+- **Status:** Proposed (Phases 0–1 implemented; see the 2026-07-02 update)
 - **Created:** 2026-07-01
 - **Owner:** _unassigned_
 - **Related:** [[cdn-config-consolidation]] (shrinks the branch surface tests must cover), [[base-framework-standards]] (decides whether `src/php/Base` is ever tested here), [[ci-release-automation]] (the workflow this test gate plugs into)
+
+> **Update (2026-07-02):** the "no suite exists" premise below is out of date —
+> the enterprise restructure landed the Brain Monkey unit layer (Phase 0) and
+> subsequent fix commits grew it to **60 green tests across 8 files**,
+> including the `is_attachment_image()` truth table this blueprint names in
+> Phase 1 (`tests/Unit/ContentControllerTest.php`) and a REST-posture guard
+> (`tests/Unit/RestSurfaceTest.php`). The CI matrix now covers PHP
+> 8.2/8.3/8.4. Phase 1 is complete; the wp-phpunit integration layer, the
+> filter-contract suite, the coverage gate, and the WordPress-version matrix
+> (Phases 2–5) remain open — the filter-contract suite should land **before**
+> the [[di-container-service-layer]] refactor, since it freezes the hook
+> contract that refactor must preserve.
 
 ## Summary
 
