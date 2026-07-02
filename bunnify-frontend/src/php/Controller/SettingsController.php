@@ -185,9 +185,14 @@ class SettingsController extends Controller {
 	 * Enabled field callback.
 	 */
 	public function enabled_field_callback() {
-		$enabled = get_option( 'bunnify_enabled' );
+		// The hidden field makes an unticked checkbox store an explicit '0'
+		// rather than the '' options.php writes for an absent checkbox, so a
+		// deliberate disable is distinguishable from a legacy pre-switch save.
+		// The checkbox reflects the EFFECTIVE state (is_enabled()), so legacy
+		// ''/missing installs render checked and normalise to '1' on save.
 		?>
-		<input type="checkbox" name="bunnify_enabled" value="1" <?php checked( 1, $enabled, true ); ?> />
+		<input type="hidden" name="bunnify_enabled" value="0" />
+		<input type="checkbox" name="bunnify_enabled" value="1" <?php checked( true, self::is_enabled(), true ); ?> />
 		<p class="description">Enable BunnyCDN functionality for your media.</p>
 		<?php
 	}
@@ -445,17 +450,20 @@ class SettingsController extends Controller {
 	/**
 	 * Check if BunnyCDN rewriting is enabled (the `bunnify_enabled` master switch).
 	 *
-	 * The option predates this check: installs configured before it was wired
-	 * up may never have saved it, so a missing option means enabled to keep
-	 * their rewriting working. Only an explicitly saved falsy value (the
-	 * checkbox unchecked on the settings screen) disables the plugin.
+	 * The option predates this check, so two stored states must stay enabled:
+	 * a missing option (settings never saved), and a stored '' — options.php
+	 * writes '' for any whitelisted checkbox absent from the POST, so every
+	 * pre-switch settings save (e.g. just entering the hostname) left ''
+	 * behind while the checkbox was still inert; treating that as disabled
+	 * would silently turn off rewriting on upgrade. Only an explicit '0',
+	 * written by the hidden field that now accompanies the checkbox, disables.
 	 *
 	 * @return bool True if enabled.
 	 */
 	public static function is_enabled(): bool {
 		$enabled = get_option( 'bunnify_enabled', null );
 
-		if ( null === $enabled ) {
+		if ( null === $enabled || '' === $enabled ) {
 			return true;
 		}
 

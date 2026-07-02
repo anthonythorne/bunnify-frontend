@@ -46,14 +46,19 @@ final class SettingsControllerTest extends TestCase {
 		$this->assertTrue( SettingsController::is_enabled() );
 	}
 
-	public function test_is_enabled_false_when_checkbox_unchecked(): void {
-		// options.php stores '' when the checkbox is absent from the POST.
+	public function test_is_enabled_true_for_legacy_empty_string(): void {
+		// options.php stores '' for a whitelisted checkbox absent from the
+		// POST, so every settings save made while the checkbox was inert
+		// (pre-master-switch) left '' behind. That is a legacy artefact, not
+		// a decision to disable — it must NOT turn rewriting off on upgrade.
 		$this->stub_enabled_option( '' );
 
-		$this->assertFalse( SettingsController::is_enabled() );
+		$this->assertTrue( SettingsController::is_enabled() );
 	}
 
 	public function test_is_enabled_false_for_stored_zero(): void {
+		// A deliberate disable: the hidden field on the settings screen
+		// stores an explicit '0' when the checkbox is unticked.
 		$this->stub_enabled_option( '0' );
 
 		$this->assertFalse( SettingsController::is_enabled() );

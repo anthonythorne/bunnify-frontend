@@ -64,16 +64,30 @@ final class CdnClientTraitTest extends TestCase {
 	}
 
 	public function test_init_cdn_false_when_plugin_explicitly_disabled(): void {
-		// An unchecked "Enable BunnyCDN" checkbox stores a falsy value; the
-		// master switch must win even with a hostname configured.
+		// Unticking "Enable BunnyCDN" stores an explicit '0' (via the hidden
+		// field); the master switch must win even with a hostname configured.
+		$this->stub_options(
+			[
+				'bunnify_enabled'  => '0',
+				'bunnify_hostname' => 'cdn.example.com',
+			]
+		);
+
+		$this->assertFalse( $this->init_cdn( new CDNController() ) );
+	}
+
+	public function test_init_cdn_true_for_legacy_empty_enabled_value(): void {
+		// A stored '' predates the working master switch (options.php writes
+		// '' for a checkbox absent from the POST) — it must stay enabled.
 		$this->stub_options(
 			[
 				'bunnify_enabled'  => '',
 				'bunnify_hostname' => 'cdn.example.com',
 			]
 		);
+		Functions\when( 'sanitize_text_field' )->returnArg();
 
-		$this->assertFalse( $this->init_cdn( new CDNController() ) );
+		$this->assertTrue( $this->init_cdn( new CDNController() ) );
 	}
 
 	public function test_init_cdn_true_when_enabled_option_never_saved(): void {
