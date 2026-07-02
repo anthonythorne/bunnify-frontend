@@ -215,14 +215,20 @@ class URLTransformer {
 		 *
 		 * This keeps backwards compatibility for width/height/crop while allowing
 		 * quality/format and any other known scalar transform args to reach the CDN.
-		 * The core keys are handled by the mapping above and never passed through
-		 * raw — `crop` in particular maps to `c`, so re-adding it here would emit
-		 * both `c=1` and `crop=1`.
+		 * Width/height are handled by the mapping above and never passed through
+		 * raw. `crop` maps to the `c=1` shorthand: boolean-ish values are fully
+		 * expressed by that mapping (passing them through would re-emit `crop=1`
+		 * or leak `crop=0`), but Bunny's native geometry form (`crop=w,h[,x,y]`)
+		 * carries information `c=1` cannot, so geometry strings still pass through.
 		 */
-		$mapped_core_keys = [ 'width', 'height', 'crop' ];
+		$mapped_core_keys = [ 'width', 'height' ];
 		foreach ( $args as $key => $value ) {
 			$key = is_string( $key ) ? trim( $key ) : '';
 			if ( '' === $key || in_array( $key, $mapped_core_keys, true ) || isset( $query_parts[ $key ] ) ) {
+				continue;
+			}
+
+			if ( 'crop' === $key && ( is_bool( $value ) || in_array( $value, [ 0, 1, '0', '1', '' ], true ) ) ) {
 				continue;
 			}
 

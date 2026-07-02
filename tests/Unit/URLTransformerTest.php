@@ -110,6 +110,48 @@ final class URLTransformerTest extends TestCase {
 		);
 	}
 
+	public function test_build_query_string_numeric_crop_emits_only_c(): void {
+		// '1'/'0' carry no geometry — they are the checkbox form of the flag.
+		$this->assertSame(
+			'width=300&c=1',
+			$this->build_query_string(
+				$this->make(),
+				array(
+					'width' => 300,
+					'crop'  => '1',
+				)
+			)
+		);
+		$this->assertSame(
+			'width=300',
+			$this->build_query_string(
+				$this->make(),
+				array(
+					'width' => 300,
+					'crop'  => '0',
+				)
+			)
+		);
+	}
+
+	/**
+	 * Bunny's native crop form is a geometry string (`crop=w,h[,x,y]`) that the
+	 * `c=1` shorthand cannot express; it must still reach the CDN raw, exactly
+	 * as it did in v1.0.0 (alongside the mapped `c=1`).
+	 */
+	public function test_build_query_string_geometry_crop_passes_through(): void {
+		$this->assertSame(
+			'width=300&c=1&crop=300%2C200',
+			$this->build_query_string(
+				$this->make(),
+				array(
+					'width' => 300,
+					'crop'  => '300,200',
+				)
+			)
+		);
+	}
+
 	public function test_is_cdn_url_matches_configured_hostname(): void {
 		Functions\when( 'wp_parse_url' )->alias( 'parse_url' );
 		Functions\when( 'get_option' )->justReturn( 'cdn.example.com' );
