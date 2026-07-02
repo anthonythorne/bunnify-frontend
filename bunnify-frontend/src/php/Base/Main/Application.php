@@ -122,7 +122,7 @@ class Application {
 	 * @return void
 	 */
 	protected function set_services_for_controller( $controller ) {
-		$used_traits = class_uses( $controller );
+		$used_traits = $this->get_traits_recursive( $controller );
 
 		// Set Route instance if controller uses RouteTrait.
 		if ( isset( $used_traits[ RouteTrait::class ] ) ) {
@@ -141,6 +141,41 @@ class Application {
 			$this->services['admin_ajax'] ??= new AdminAjax();
 			$controller->set_admin_ajax_instance( $this->services['admin_ajax'] );
 		}
+	}
+
+	/**
+	 * Collect every trait used by an object: its class, all parent classes,
+	 * and traits composed by other traits.
+	 *
+	 * class_uses() alone is non-recursive — it misses traits pulled in by a
+	 * parent class or by another trait, so service detection would skip them.
+	 *
+	 * @param object $instance The object to inspect.
+	 *
+	 * @return array Trait names, keyed by trait name (class_uses() shape).
+	 */
+	protected function get_traits_recursive( $instance ) {
+		$traits = [];
+
+		// Traits used directly by the class and each of its parents.
+		$class = get_class( $instance );
+		do {
+			$traits += class_uses( $class ) ?: [];
+			$class   = get_parent_class( $class );
+		} while ( false !== $class );
+
+		// Traits used by those traits, transitively.
+		$queue = $traits;
+		while ( ! empty( $queue ) ) {
+			$nested = [];
+			foreach ( $queue as $trait ) {
+				$nested += class_uses( $trait ) ?: [];
+			}
+			$queue   = array_diff_key( $nested, $traits );
+			$traits += $queue;
+		}
+
+		return $traits;
 	}
 
 	/**
