@@ -101,26 +101,6 @@ parameters:
 			path: bunnify-frontend/src/php/Controller/ImageController.php
 
 		-
-			message: "#^Callback expects 1 parameter, \\$accepted_args is set to 3\\.$#"
-			count: 1
-			path: bunnify-frontend/src/php/Controller/RESTController.php
-
-		-
-			message: "#^Dead catch \\- Exception is never thrown in the try block\\.$#"
-			count: 2
-			path: bunnify-frontend/src/php/Controller/RESTController.php
-
-		-
-			message: "#^Property BunnifyFrontend\\\\Controller\\\\RESTController\\:\\:\\$bunnify_hostname is never read, only written\\.$#"
-			count: 1
-			path: bunnify-frontend/src/php/Controller/RESTController.php
-
-		-
-			message: "#^Property BunnifyFrontend\\\\Controller\\\\RESTController\\:\\:\\$url_transformer is never read, only written\\.$#"
-			count: 1
-			path: bunnify-frontend/src/php/Controller/RESTController.php
-
-		-
 			message: "#^Parameter \\#1 \\$text of function esc_html expects string, int\\<0, max\\> given\\.$#"
 			count: 1
 			path: bunnify-frontend/src/php/Controller/SettingsController.php

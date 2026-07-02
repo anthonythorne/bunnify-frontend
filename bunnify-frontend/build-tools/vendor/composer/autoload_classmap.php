@@ -40,7 +40,6 @@ return array(
     'BunnifyFrontend\\Controller\\CDNController' => $baseDir . '/../src/php/Controller/CDNController.php',
     'BunnifyFrontend\\Controller\\ContentController' => $baseDir . '/../src/php/Controller/ContentController.php',
     'BunnifyFrontend\\Controller\\ImageController' => $baseDir . '/../src/php/Controller/ImageController.php',
-    'BunnifyFrontend\\Controller\\RESTController' => $baseDir . '/../src/php/Controller/RESTController.php',
     'BunnifyFrontend\\Controller\\SettingsController' => $baseDir . '/../src/php/Controller/SettingsController.php',
     'BunnifyFrontend\\Controller\\WPResourceHintsController' => $baseDir . '/../src/php/Controller/WPResourceHintsController.php',
     'BunnifyFrontend\\Library\\CdnClientTrait' => $baseDir . '/../src/php/Library/CdnClientTrait.php',

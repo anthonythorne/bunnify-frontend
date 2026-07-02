@@ -52,7 +52,6 @@ $bunnify_app = new \BunnifyFrontend\Base\Main\Application(
 		new \BunnifyFrontend\Controller\WPResourceHintsController(),
 		new \BunnifyFrontend\Controller\ContentController(),
 		new \BunnifyFrontend\Controller\ImageController(),
-		new \BunnifyFrontend\Controller\RESTController(),
 		new \BunnifyFrontend\Controller\SettingsController(),
 	],
 );

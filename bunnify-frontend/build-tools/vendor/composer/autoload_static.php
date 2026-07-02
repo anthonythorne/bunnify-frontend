@@ -59,7 +59,6 @@ class ComposerStaticInitd394781105f5bb3f37716fdacb828299
         'BunnifyFrontend\\Controller\\CDNController' => __DIR__ . '/../..' . '/../src/php/Controller/CDNController.php',
         'BunnifyFrontend\\Controller\\ContentController' => __DIR__ . '/../..' . '/../src/php/Controller/ContentController.php',
         'BunnifyFrontend\\Controller\\ImageController' => __DIR__ . '/../..' . '/../src/php/Controller/ImageController.php',
-        'BunnifyFrontend\\Controller\\RESTController' => __DIR__ . '/../..' . '/../src/php/Controller/RESTController.php',
         'BunnifyFrontend\\Controller\\SettingsController' => __DIR__ . '/../..' . '/../src/php/Controller/SettingsController.php',
         'BunnifyFrontend\\Controller\\WPResourceHintsController' => __DIR__ . '/../..' . '/../src/php/Controller/WPResourceHintsController.php',
         'BunnifyFrontend\\Library\\CdnClientTrait' => __DIR__ . '/../..' . '/../src/php/Library/CdnClientTrait.php',
