@@ -33,6 +33,11 @@ class WPResourceHintsController extends Controller {
 	 * @return array
 	 */
 	public function update_resource_hints( array $urls, string $relation_type ): array {
+		// No hints when rewriting is disabled — nothing will load from the CDN.
+		if ( ! SettingsController::is_enabled() ) {
+			return $urls;
+		}
+
 		$bunnify_hostname = get_option( 'bunnify_hostname', false );
 		if ( ! $bunnify_hostname ) {
 			return $urls;

@@ -45,6 +45,11 @@ trait CdnClientTrait {
 			return true;
 		}
 
+		// Master switch — an explicitly disabled bunnify_enabled stops all rewriting.
+		if ( ! \BunnifyFrontend\Controller\SettingsController::is_enabled() ) {
+			return false;
+		}
+
 		$this->bunnify_hostname = get_option( 'bunnify_hostname' );
 
 		// Only proceed if hostname is configured.

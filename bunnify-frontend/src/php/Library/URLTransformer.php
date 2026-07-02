@@ -446,6 +446,11 @@ class URLTransformer {
 			return true;
 		}
 
+		// Master switch — an explicitly disabled bunnify_enabled stops all rewriting.
+		if ( ! \BunnifyFrontend\Controller\SettingsController::is_enabled() ) {
+			return false;
+		}
+
 		self::$static_hostname = get_option( 'bunnify_hostname' );
 
 		// Only proceed if hostname is configured.

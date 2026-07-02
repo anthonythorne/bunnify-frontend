@@ -443,6 +443,26 @@ class SettingsController extends Controller {
 	}
 
 	/**
+	 * Check if BunnyCDN rewriting is enabled (the `bunnify_enabled` master switch).
+	 *
+	 * The option predates this check: installs configured before it was wired
+	 * up may never have saved it, so a missing option means enabled to keep
+	 * their rewriting working. Only an explicitly saved falsy value (the
+	 * checkbox unchecked on the settings screen) disables the plugin.
+	 *
+	 * @return bool True if enabled.
+	 */
+	public static function is_enabled(): bool {
+		$enabled = get_option( 'bunnify_enabled', null );
+
+		if ( null === $enabled ) {
+			return true;
+		}
+
+		return (bool) $enabled;
+	}
+
+	/**
 	 * Check if local development mode is enabled.
 	 *
 	 * @return bool True if local development mode is enabled.

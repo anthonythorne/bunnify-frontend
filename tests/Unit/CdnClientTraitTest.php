@@ -25,27 +25,63 @@ final class CdnClientTraitTest extends TestCase {
 		return $method->invoke( $controller );
 	}
 
+	/**
+	 * Stub get_option() from a map, honouring the caller's default for
+	 * options absent from the map (mirrors a never-saved option).
+	 *
+	 * @param array $options Option values keyed by option name.
+	 */
+	private function stub_options( array $options ): void {
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default = false ) use ( $options ) {
+				return array_key_exists( $name, $options ) ? $options[ $name ] : $default;
+			}
+		);
+	}
+
 	public function test_init_cdn_false_when_hostname_option_is_unset(): void {
 		// get_option() returns false for a missing option; the trait must coerce
 		// that to '' and bail (no strict_types TypeError).
-		Functions\when( 'get_option' )->justReturn( false );
+		$this->stub_options( [] );
 
 		$this->assertFalse( $this->init_cdn( new CDNController() ) );
 	}
 
 	public function test_init_cdn_false_when_hostname_is_empty_string(): void {
-		Functions\when( 'get_option' )->justReturn( '' );
+		$this->stub_options( [ 'bunnify_hostname' => '' ] );
 
 		$this->assertFalse( $this->init_cdn( new CDNController() ) );
 	}
 
 	public function test_init_cdn_true_when_hostname_configured_and_is_idempotent(): void {
-		Functions\when( 'get_option' )->justReturn( 'cdn.example.com' );
+		$this->stub_options( [ 'bunnify_hostname' => 'cdn.example.com' ] );
 		Functions\when( 'sanitize_text_field' )->returnArg();
 
 		$controller = new CDNController();
 		$this->assertTrue( $this->init_cdn( $controller ) );
 		// Second call short-circuits on the cached transformer.
 		$this->assertTrue( $this->init_cdn( $controller ) );
+	}
+
+	public function test_init_cdn_false_when_plugin_explicitly_disabled(): void {
+		// An unchecked "Enable BunnyCDN" checkbox stores a falsy value; the
+		// master switch must win even with a hostname configured.
+		$this->stub_options(
+			[
+				'bunnify_enabled'  => '',
+				'bunnify_hostname' => 'cdn.example.com',
+			]
+		);
+
+		$this->assertFalse( $this->init_cdn( new CDNController() ) );
+	}
+
+	public function test_init_cdn_true_when_enabled_option_never_saved(): void {
+		// Legacy installs predate the master switch: a missing option must
+		// keep rewriting enabled.
+		$this->stub_options( [ 'bunnify_hostname' => 'cdn.example.com' ] );
+		Functions\when( 'sanitize_text_field' )->returnArg();
+
+		$this->assertTrue( $this->init_cdn( new CDNController() ) );
 	}
 }
