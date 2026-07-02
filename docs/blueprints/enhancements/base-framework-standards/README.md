@@ -5,6 +5,13 @@
 - **Owner:** _unassigned_
 - **Related:** [[centralize-cdn-config]], [[cdn-service-provider]]
 
+> **Update (2026-07-02):** the non-recursive `class_uses()` trait-detection bug
+> called out below has been fixed ahead of this blueprint
+> (`Application::get_traits_recursive()`, unit-tested). This diverges `Base`
+> from the downstream consumer copy until a sync happens — one more argument
+> for the `bin/sync-base.sh` guard in the rollout plan. Everything else here
+> remains open.
+
 ## Summary
 The `src/php/Base` mini-MVC framework is the load-bearing spine of the plugin — it boots the
 application, wires controllers, and merges config — yet it is the one area we deliberately do not

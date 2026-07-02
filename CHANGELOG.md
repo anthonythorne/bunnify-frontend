@@ -29,14 +29,25 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   libraries (with defensive casts on filtered returns), plus a
   behaviour-preserving WordPress Coding Standards pass across the plugin.
 
+### Fixed
+- A truthy `crop` transform argument emitted both `c=1` and `crop=1`; only the
+  `c=1` shorthand is sent now, and a falsy `crop` no longer leaks a raw
+  `crop=0` parameter.
+- The **Enable BunnyCDN** setting (`bunnify_enabled`) was never read at
+  runtime; it is now a real master switch that stops URL rewriting and CDN
+  resource hints when unchecked. Installs that never saved the setting remain
+  enabled.
+- `Application` trait-driven service injection used non-recursive
+  `class_uses()`, missing traits inherited from a parent class or composed by
+  another trait.
+
 ### Packaging note
 - Consumers that copy this repository into `wp-content/plugins/` must now sync
   from the `bunnify-frontend/` subdirectory rather than the repo root.
 
 ### Known issues
-- A truthy `crop` transform argument currently emits both `c=1` and `crop=1`.
 - See [`docs/blueprints/0001-enterprise-restructure`](docs/blueprints/0001-enterprise-restructure/README.md)
-  for the full list and remediation plan.
+  for the remaining list and remediation plan.
 
 ## [1.0.0] - 2026-07-01
 

@@ -5,6 +5,13 @@
 - **Owner:** _unassigned_
 - **Related:** [[centralize-cdn-config]] (the effective-enabled / hostname resolution this blueprint depends on), [[base-phpcs-boundary]] (where framework-vs-plugin lint boundaries are decided)
 
+> **Update (2026-07-02):** rollout step 5 landed ahead of this blueprint —
+> `bunnify_enabled` is now read at runtime via `SettingsController::is_enabled()`
+> (missing option = enabled, per the backward-compatible default below). The
+> schema refactor, sanitization, and derived category list (steps 1–4, 6)
+> remain open, and references below to the option being "never read" describe
+> the pre-fix state.
+
 ## Summary
 `SettingsController` hand-writes ~11 near-identical `add_settings_field` + `*_field_callback` pairs and registers every option with no `sanitize_callback`, so the class is ~200 lines of copy-paste that grows linearly with each new toggle. This blueprint proposes replacing that with a single **data-driven schema** — an array of field definitions that drives generic `register`, `render`, and `sanitize` callbacks — and using the same schema to derive the debug-category list that is currently hardcoded in two places. It also resolves the `bunnify_enabled` option, which today is registered, rendered, and deleted on uninstall but **never read at runtime**, by wiring it up as a real master switch (with a backward-compatible default) rather than leaving a dead toggle in the UI.
 

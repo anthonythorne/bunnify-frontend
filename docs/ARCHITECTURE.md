@@ -55,11 +55,12 @@ Key facts:
   implement `set_up()` — the single place a controller registers its WordPress hooks
   (`Controller.php:32`, `abstract public function set_up()`).
 - **Trait-driven service injection.** `Application::set_services_for_controller()`
-  (`src/php/Base/Main/Application.php:124`) inspects `class_uses($controller)` and lazily constructs
+  (`src/php/Base/Main/Application.php:124`) inspects the controller's traits — collected recursively
+  across parent classes and traits-of-traits by `get_traits_recursive()` — and lazily constructs
   and injects a shared `Route`, `REST`, or `AdminAjax` instance only for controllers that use the
   matching trait (`RouteTrait` / `RESTTrait` / `AdminAjaxTrait`). None of Bunnify's controllers use
   those traits today, so no services are injected — but the mechanism is the framework's substitute
-  for a DI container. (Note: `class_uses()` is non-recursive; see [debt](#8-architectural-debt).)
+  for a DI container.
 - The autoloader is loaded from `build-tools/vendor/autoload.php` (a minimal PSR-4 map that ships in
   the zip), guarded by the `APP_NAME` constant so a double-load (e.g. plugin + bundled dependency)
   is a no-op.
@@ -221,9 +222,11 @@ exists on disk ⇒ return the original untouched).
   `…_image_processing`, `…_srcset_generation`, `…_content_filtering`, `…_local_dev_mode`, `…_performance`).
   Logs are written to `wp-content/uploads/bunnify-debug.log` and only emitted when a page is loaded with
   `?bunnify_debug=1`. See [LOGGING.md](LOGGING.md).
-- **`bunnify_enabled`** — registered, rendered, and deleted on uninstall, but **never read at runtime**
-  today; the effective enable gate is "is `bunnify_hostname` non-empty". This dead toggle is addressed
-  by the data-driven-settings blueprint (§8).
+- **`bunnify_enabled`** — the master switch, read via `SettingsController::is_enabled()` and checked
+  in the CDN bootstrap paths (`CdnClientTrait::init_cdn()`, `URLTransformer::init_static_cdn()`) and
+  the resource-hints controller. A missing option means **enabled** (installs configured before the
+  switch was wired up keep rewriting); only an explicitly saved falsy value disables the plugin. A
+  configured `bunnify_hostname` is still required for anything to rewrite.
 
 `uninstall.php` removes all `bunnify_*` options.
 
@@ -285,11 +288,11 @@ Known rough edges, each with a design blueprint under `docs/blueprints/enhanceme
   recommendation is removal — see
   [blueprints/enhancements/rest-controller-completion/README.md](blueprints/enhancements/rest-controller-completion/README.md).
 - **Hand-written settings.** `SettingsController` hand-codes ~11 near-identical field callbacks with no
-  `sanitize_callback`, and `bunnify_enabled` is a dead toggle. A data-driven schema is proposed in
+  `sanitize_callback`. A data-driven schema is proposed in
   [blueprints/enhancements/data-driven-settings/README.md](blueprints/enhancements/data-driven-settings/README.md).
 - **Un-standardised `Base` framework.** `src/php/Base` is excluded from PHPCS/PHPStan, lacks
-  `strict_types`, and is duplicated byte-for-byte in the caretochange consumer. It also has a latent
-  bug: `Application::set_services_for_controller()` uses non-recursive `class_uses()`. See
+  `strict_types`, and is duplicated in the downstream consumer (now diverging: the recursive
+  trait-detection fix in `Application` has only landed here). See
   [blueprints/enhancements/base-framework-standards/README.md](blueprints/enhancements/base-framework-standards/README.md).
 - **Related:** test coverage
   ([blueprints/enhancements/full-test-coverage/README.md](blueprints/enhancements/full-test-coverage/README.md))

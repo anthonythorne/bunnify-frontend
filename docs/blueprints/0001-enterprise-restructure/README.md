@@ -142,6 +142,13 @@ is captured for follow-up.
 | `Application::set_services_for_controller()` uses `class_uses()` (non-recursive), so trait detection misses traits pulled in transitively. | `Base\Main\Application` | [[di-container-service-layer]] / [[base-framework-standards]] |
 | Unused `CACHE_TTL_*` constants from `CachingTrait` in the library classes. | `URLTransformer`, `ImageProcessor` (baselined) | [[base-framework-standards]] |
 
+> **Update (2026-07-02):** four of these have since been fixed on this branch: the
+> `crop` double-emission, the dead `=== false` branch, the non-recursive
+> `class_uses()` trait detection, and the dead `bunnify_enabled` toggle (now a
+> real master switch, default-enabled for installs that never saved it). Still
+> open: the `RESTController` no-op (removal per [[rest-controller-completion]])
+> and the unused `CACHE_TTL_*` constants.
+
 ## Deferred work
 
 Larger changes are designed as [enhancement blueprints](../enhancements/README.md):
