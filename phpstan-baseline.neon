@@ -169,8 +169,3 @@ parameters:
 			message: "#^Constant BunnifyFrontend\\\\Library\\\\URLTransformer\\:\\:CACHE_TTL_VERY_LONG is unused\\.$#"
 			count: 1
 			path: bunnify-frontend/src/php/Library/URLTransformer.php
-
-		-
-			message: "#^Strict comparison using \\=\\=\\= between false and int\\<0, max\\> will always evaluate to false\\.$#"
-			count: 1
-			path: bunnify-frontend/src/php/Library/URLTransformer.php

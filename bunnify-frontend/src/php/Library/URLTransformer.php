@@ -313,16 +313,12 @@ class URLTransformer {
 		$url_path = $url_parts['path'];
 
 		// Check if the path contains wp-content/uploads (most reliable method).
-		if ( strpos( $url_path, '/wp-content/uploads/' ) === false ) {
-			return false;
-		}
-
-		// Extract the relative path from wp-content/uploads onwards.
 		$uploads_pos = strpos( $url_path, '/wp-content/uploads/' );
 		if ( false === $uploads_pos ) {
 			return false;
 		}
 
+		// Extract the relative path from wp-content/uploads onwards.
 		$relative_path = substr( $url_path, $uploads_pos + strlen( '/wp-content/uploads/' ) );
 		$local_path    = $upload_path . '/' . $relative_path;
 
