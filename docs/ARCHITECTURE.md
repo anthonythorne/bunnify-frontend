@@ -48,9 +48,9 @@ Application::setup_controllers()   — for each controller:
 
 Key facts:
 
-- The controller list is declared **in the entry file** (`bunnify-frontend.php:47-58`) and passed to
+- The controller list is declared **in the entry file** (`bunnify-frontend.php:47-57`) and passed to
   `Application`. Order is: `CDNController`, `WPResourceHintsController`, `ContentController`,
-  `ImageController`, `RESTController`, `SettingsController`.
+  `ImageController`, `SettingsController`.
 - Every controller extends `Base\Main\Controller` (`src/php/Base/Main/Controller.php`) and must
   implement `set_up()` — the single place a controller registers its WordPress hooks
   (`Controller.php:32`, `abstract public function set_up()`).
@@ -103,7 +103,6 @@ hooks in `set_up()`.
 | **ContentController** | `Controller/ContentController.php` | Post-render HTML rewriting for content that isn't produced by the attachment functions: `the_content`, blocks, galleries, and text/media widgets. Uses `WP_HTML_Tag_Processor` and a heuristic (`is_attachment_image()`) to skip images already handled by `ImageController`. | `bunnify_content`, `the_content`, `widget_text`, `get_post_galleries`, `widget_media_image_instance`, `render_block`, `render_block_core/gallery` |
 | **WPResourceHintsController** | `Controller/WPResourceHintsController.php` | Adds a `preconnect` resource hint for the Bunny hostname (and strips a duplicate `dns-prefetch`). Skips the hint when the CDN host equals the site host (local/staging/misconfig). | `wp_resource_hints` |
 | **SettingsController** | `Controller/SettingsController.php` | Media → **BunnyCDN** admin page. Registers `bunnify_hostname`, `bunnify_local_dev_mode`, and the debug toggles via the Settings API; exposes static helpers `is_local_dev_mode_enabled()` and `is_debug_enabled_for_category()`. | `admin_menu`, `admin_init` |
-| **RESTController** | `Controller/RESTController.php` | **No-op stub.** Registers three REST filters that return their input unchanged behind "For now" comments. Slated for removal — see §8. | `rest_request_before_callbacks`, `rest_after_insert_attachment`, `rest_request_after_callbacks` |
 
 ### ImageController vs ContentController — the split
 
@@ -284,8 +283,15 @@ Known rough edges, each with a design blueprint under `docs/blueprints/enhanceme
   `URLTransformer::init_static_cdn()` (a static singleton), with stray `get_option()` reads elsewhere.
   A single injected CDN service is proposed in
   [blueprints/enhancements/di-container-service-layer/README.md](blueprints/enhancements/di-container-service-layer/README.md).
-- **REST stub.** `RESTController` registers three no-op filters on every REST request. The
-  recommendation is removal — see
+- **REST posture (deliberate, not a rough edge).** The plugin registers no REST-specific hooks — the
+  former no-op `RESTController` (an abandoned port of Jetpack Photon's disable-during-REST guard) was
+  removed, and `tests/Unit/RestSurfaceTest.php` keeps it out. Rewriting still reaches REST responses
+  through the general filters: `is_admin()` is false during REST, so `/wp/v2/media`
+  `media_details.sizes.*.source_url` and posts/pages `content.rendered` return CDN URLs (top-level
+  `source_url` stays origin). That is the supported behaviour — it is what lets the block editor show
+  images on environments without synced uploads, and editors persist those CDN size URLs into stored
+  content, so treat the CDN hostname as part of the content contract. `context=edit` `content.raw` is
+  always emitted unfiltered. Decision record and revival escape hatch:
   [blueprints/enhancements/rest-controller-completion/README.md](blueprints/enhancements/rest-controller-completion/README.md).
 - **Hand-written settings.** `SettingsController` hand-codes ~11 near-identical field callbacks with no
   `sanitize_callback`. A data-driven schema is proposed in

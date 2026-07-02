@@ -142,12 +142,16 @@ is captured for follow-up.
 | `Application::set_services_for_controller()` uses `class_uses()` (non-recursive), so trait detection misses traits pulled in transitively. | `Base\Main\Application` | [[di-container-service-layer]] / [[base-framework-standards]] |
 | Unused `CACHE_TTL_*` constants from `CachingTrait` in the library classes. | `URLTransformer`, `ImageProcessor` (baselined) | [[base-framework-standards]] |
 
-> **Update (2026-07-02):** four of these have since been fixed on this branch: the
+> **Update (2026-07-02):** five of these have since been fixed on this branch: the
 > `crop` double-emission, the dead `=== false` branch, the non-recursive
-> `class_uses()` trait detection, and the dead `bunnify_enabled` toggle (now a
-> real master switch, default-enabled for installs that never saved it). Still
-> open: the `RESTController` no-op (removal per [[rest-controller-completion]])
-> and the unused `CACHE_TTL_*` constants.
+> `class_uses()` trait detection, the dead `bunnify_enabled` toggle (now a
+> real master switch — missing/legacy-`''` values stay enabled, a deliberate
+> untick stores `'0'`), and the `RESTController` no-op (removed per
+> [[rest-controller-completion]], with a guard test). Follow-up fixes from the
+> same review wave: a disabled/unconfigured CDN no longer short-circuits
+> `image_downsize` with the full-size origin URL, a `strict_types` fatal on a
+> never-saved hostname got a defensive cast, and Bunny geometry `crop=w,h`
+> strings pass through again. Still open: the unused `CACHE_TTL_*` constants.
 
 ## Deferred work
 

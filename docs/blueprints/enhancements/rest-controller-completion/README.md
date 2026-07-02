@@ -1,9 +1,40 @@
 # Complete or remove the REST layer
 
-- **Status:** Proposed
+- **Status:** Implemented (option (b) — removed; see the 2026-07-02 update)
 - **Created:** 2026-07-01
-- **Owner:** _unassigned_
-- **Related:** [[base-framework-standards]] (Base is currently un-linted, which is why this dead controller passes CI), [[consolidate-cdn-init]] (the duplicated `init_cdn()` pattern any real REST implementation would otherwise copy)
+- **Owner:** Anthony Thorne
+- **Related:** [[base-framework-standards]] (Base is currently un-linted, which is why this dead controller passed CI), [[data-driven-settings]] (the `bunnify_enabled` master switch any revived REST rewriter must honour)
+
+> **Update (2026-07-02): option (b) executed, with factual corrections.**
+> `RESTController` is deleted, unregistered from the boot list, the runtime
+> autoloader re-dumped, and `tests/Unit/RestSurfaceTest.php` guards the three
+> withdrawn hooks against silent reintroduction. Two claims below did not
+> survive verification and are corrected here rather than rewritten in place:
+>
+> 1. **REST responses are NOT origin-only today.** The plugin's only context
+>    guards are `is_admin()` checks, which are false during REST requests, so
+>    `/wp/v2/media` `media_details.sizes.*.source_url` (via
+>    `wp_get_attachment_image_src` → `image_downsize`) and posts/pages
+>    `content.rendered` (via `the_content` at priority 20) are already
+>    CDN-rewritten — verified empirically against a live install. Only the
+>    top-level `source_url` stays origin (no `wp_get_attachment_url` filter).
+> 2. **The stub's intent was a guard, not a feature.** The three hook/method
+>    pairs are a verbatim port of Jetpack Photon's REST handling, whose
+>    canonical purpose is to *disable* image rewriting during attachment REST
+>    requests so editors see origin URLs. It was abandoned before the bodies
+>    were written.
+>
+> The recorded decision is therefore sharper than "remove dead code": the
+> unguarded REST rewriting is the **supported behaviour**. It is what lets a
+> block editor on an environment without synced uploads display images (they
+> load from the CDN), and consumer content already depends on it — the block
+> editor persists CDN size URLs from media REST responses into stored
+> `post_content` (observed in production content). Consequences: the CDN
+> hostname is effectively part of stored-content contracts (treat renames as
+> a content migration), and tooling that round-trips content must use
+> `context=edit` / `content.raw`, which is emitted unfiltered. Reviving REST
+> behaviour later means the option (a) escape hatch below **plus** the
+> `bunnify_enabled` master-switch gate.
 
 ## Summary
 

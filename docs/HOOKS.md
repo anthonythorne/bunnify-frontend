@@ -23,6 +23,17 @@ This document lists all WordPress hooks and filters used by the Bunnify Frontend
 - `render_block` - Processes block content for images
 - `render_block_core/gallery` - Processes gallery blocks specifically
 
+### REST API posture
+
+The plugin attaches **no REST-specific hooks**. Callbacks once registered on
+`rest_request_before_callbacks`, `rest_after_insert_attachment`, and
+`rest_request_after_callbacks` were never-functional stubs and are withdrawn
+(guarded by `tests/Unit/RestSurfaceTest.php`). Note the filters above still
+run during REST requests — `is_admin()` is false there — so
+`/wp/v2/media` size URLs and `content.rendered` are CDN-rewritten by design,
+while `context=edit` `content.raw` is always emitted unfiltered. See the
+`rest-controller-completion` blueprint for the decision record.
+
 ## Custom Actions Provided
 
 ### `bunnify_processing_attachment_image`

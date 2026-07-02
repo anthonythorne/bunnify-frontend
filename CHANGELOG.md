@@ -32,14 +32,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 - A truthy `crop` transform argument emitted both `c=1` and `crop=1`; only the
   `c=1` shorthand is sent now, and a falsy `crop` no longer leaks a raw
-  `crop=0` parameter.
+  `crop=0` parameter. Bunny's native geometry form (`crop=w,h[,x,y]`) still
+  passes through raw alongside the mapped `c=1`, as in 1.0.0.
 - The **Enable BunnyCDN** setting (`bunnify_enabled`) was never read at
   runtime; it is now a real master switch that stops URL rewriting and CDN
-  resource hints when unchecked. Installs that never saved the setting remain
-  enabled.
+  resource hints when unchecked. Installs that never saved the setting — and
+  legacy saves that stored `''` while the checkbox was inert — remain
+  enabled; a deliberate untick now stores an explicit `0`.
+- A disabled or unconfigured CDN no longer short-circuits `image_downsize`
+  and content rewriting with the full-size origin URL (which collapsed every
+  intermediate image size); the filters now leave their input untouched.
+- Assigning a never-saved `bunnify_hostname` option (returned as `false`)
+  to a typed property fataled under `strict_types`; a defensive cast restores
+  the pre-strict coercion.
 - `Application` trait-driven service injection used non-recursive
   `class_uses()`, missing traits inherited from a parent class or composed by
   another trait.
+
+### Removed
+- The never-functional `RESTController` (an abandoned port of Jetpack
+  Photon's disable-rewriting-during-REST guard; three no-op callbacks on
+  every REST request). No behaviour change; a guard test keeps the withdrawn
+  hooks (`rest_request_before_callbacks`, `rest_after_insert_attachment`,
+  `rest_request_after_callbacks`) from silently returning. The plugin's REST
+  posture — general filters do rewrite REST `sizes.*.source_url` and
+  `content.rendered`; `content.raw` stays unfiltered — is now documented in
+  `docs/ARCHITECTURE.md` and the `rest-controller-completion` blueprint.
 
 ### Packaging note
 - Consumers that copy this repository into `wp-content/plugins/` must now sync

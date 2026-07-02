@@ -11,6 +11,16 @@
 > schema refactor, sanitization, and derived category list (steps 1–4, 6)
 > remain open, and references below to the option being "never read" describe
 > the pre-fix state.
+>
+> **Second update (same day):** the initial wiring treated a stored `''` as
+> disabled, which violated this blueprint's own backward-compat rule —
+> `options.php` writes `''` for a whitelisted checkbox absent from POST, so
+> every pre-switch settings save left `''` behind without the admin choosing
+> anything. `is_enabled()` now treats `''` (and a missing option) as enabled;
+> a deliberate disable stores an explicit `'0'` via a hidden field that now
+> accompanies the checkbox, and the checkbox renders the *effective* state so
+> legacy installs self-heal to `'1'` on save. The schema refactor must
+> preserve exactly these semantics.
 
 ## Summary
 `SettingsController` hand-writes ~11 near-identical `add_settings_field` + `*_field_callback` pairs and registers every option with no `sanitize_callback`, so the class is ~200 lines of copy-paste that grows linearly with each new toggle. This blueprint proposes replacing that with a single **data-driven schema** — an array of field definitions that drives generic `register`, `render`, and `sanitize` callbacks — and using the same schema to derive the debug-category list that is currently hardcoded in two places. It also resolves the `bunnify_enabled` option, which today is registered, rendered, and deleted on uninstall but **never read at runtime**, by wiring it up as a real master switch (with a backward-compatible default) rather than leaving a dead toggle in the UI.
