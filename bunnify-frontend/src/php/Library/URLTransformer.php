@@ -494,7 +494,7 @@ class URLTransformer {
 	 *                     no hostname configured).
 	 */
 	public static function get_cdn_url_by_id( int $attachment_id, array|string $args = [], ?string $scheme = null ): ?string {
-		$original_url = wp_get_attachment_url( $attachment_id );
+		$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 		if ( empty( $original_url ) ) {
 			return null;
 		}

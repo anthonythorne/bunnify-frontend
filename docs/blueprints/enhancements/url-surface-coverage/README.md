@@ -1,8 +1,18 @@
 # URL surface coverage — attachment URLs, header images, and CSS backgrounds
 
-- **Status:** Proposed
+- **Status:** Implemented (2026-07-03; integration origin-lookup regression pending the wp-phpunit layer, [[full-test-coverage]])
 - **Created:** 2026-07-03
-- **Owner:** _unassigned_
+- **Owner:** Anthony Thorne
+
+> **Update (2026-07-03): implemented.** `AttachmentUrl` (suspend guard +
+> `origin()` wrapper) added; all eleven internal origin lookups routed through
+> it; the `wp_get_attachment_url` filter, `theme_mod_header_image` /
+> `get_header_image`, and inline `background-image` rewriting are live and gated.
+> Verified end-to-end on a real install: bare URLs → CDN, internal origin
+> lookups still return origin (no recursion / cache poisoning), already-CDN URLs
+> idempotent, data-URI/gradient untouched. Unit tests cover the suspend guard
+> and filter gating; the full eleven-caller origin-lookup regression is deferred
+> to the wp-phpunit integration layer ([[full-test-coverage]]).
 - **Related:** [[di-container-service-layer]] (the shared CDN service / `bunnify_url` path this reuses), [[full-test-coverage]] (the `wp-phpunit` integration layer the origin-lookup regression tests depend on), [[rest-controller-completion]] (the REST `source_url` surface this newly rewrites)
 
 ## Summary

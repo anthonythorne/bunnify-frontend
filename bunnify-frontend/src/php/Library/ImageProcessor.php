@@ -225,7 +225,7 @@ class ImageProcessor {
 
 		if ( false === $original_url ) {
 			// Not in cache, get from WordPress.
-			$original_url = wp_get_attachment_url( $attachment_id );
+			$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 
 			// Cache the result with appropriate TTL.
 			$cache_ttl = self::get_attachment_cache_ttl( $attachment_id );

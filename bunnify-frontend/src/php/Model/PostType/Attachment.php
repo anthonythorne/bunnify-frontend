@@ -39,7 +39,7 @@ class Attachment extends GenericPostModel {
 	 */
 	public function get_attachment_url(): ?string {
 		if ( null === $this->cached_url ) {
-			$this->cached_url = wp_get_attachment_url( $this->post->ID );
+			$this->cached_url = \BunnifyFrontend\Library\AttachmentUrl::origin( (int) $this->post->ID );
 		}
 		return $this->cached_url;
 	}

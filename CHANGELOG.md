@@ -7,6 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- URL-surface coverage for bare attachment URLs. Beyond the `<img>`/resize
+  pipeline, the plugin now rewrites `wp_get_attachment_url()` (ACF URL fields,
+  theme templates, REST `source_url`, block bindings), the classic-theme custom
+  header (`theme_mod_header_image` / `get_header_image`), and inline
+  `background-image: url(...)` on `core/cover`/`core/group`/`core/columns`. The
+  `wp_get_attachment_url` filter is re-entrancy-guarded via a new
+  `AttachmentUrl::origin()` accessor (a Photon-style suspend flag) so the
+  plugin's own internal origin lookups are never rewritten. New opt-in hooks:
+  `bunnify_admin_allow_attachment_url`, `bunnify_skip_background_image`. All
+  gated by the existing enabled/hostname/local-dev rules; data URIs, gradients,
+  and already-CDN URLs are left untouched.
 - WordPress.org submission-readiness pass: all user-facing admin strings are
   internationalised with the `bunnify-frontend` text domain; every setting now
   registers a `sanitize_callback` (hostname reduced to a bare host, log

@@ -49,6 +49,16 @@ This plugin is ideal for:
 - **Hostname**: Your BunnyCDN hostname (e.g., `cdn.yoursite.com`)
 - **Enabled**: Checkbox to enable/disable the functionality
 
+### URL surface coverage
+
+Beyond `<img>` tags, the plugin also rewrites **bare attachment URLs** to the
+CDN — `wp_get_attachment_url()` (ACF URL fields, theme templates, REST
+`source_url`), the classic-theme custom header (`theme_mod_header_image` /
+`get_header_image`), and inline `background-image: url(...)` on `core/cover`
+(fixed/repeat background), `core/group`, and `core/columns`. All are gated by
+the same enabled/hostname/local-dev rules and can be exempted with
+`bunnify_admin_allow_attachment_url` and `bunnify_skip_background_image`.
+
 ### Development Settings
 - **Local Development Mode**: Serves the local file when it exists and falls back to the CDN for missing images. Auto-enabled on `local`/`development` environments (via `wp_get_environment_type()`); `staging` and `production` are off by default.
 - **Debug Logging**: Enable per-category logging for troubleshooting. Logging runs automatically for the enabled categories when a front-end page loads.

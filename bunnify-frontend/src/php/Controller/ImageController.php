@@ -177,6 +177,19 @@ class ImageController extends Controller {
 		// image_downsize, so the other filters never see it).
 		add_filter( 'wp_prepare_attachment_for_js', [ $this, 'filter_attachment_for_js' ], 10, 3 );
 
+		// Bare attachment URLs (ACF URL fields, theme templates, REST source_url,
+		// block bindings) are emitted by wp_get_attachment_url() — outside the
+		// <img>/resize pipeline the other filters cover. Guarded against
+		// re-entrancy because the plugin calls wp_get_attachment_url() internally
+		// (through AttachmentUrl::origin()) to obtain the origin URL.
+		add_filter( 'wp_get_attachment_url', [ $this, 'filter_attachment_url' ], 10, 2 );
+
+		// Classic-theme custom header image: get_header_image() / the
+		// theme_mod_header_image theme mod return a stored origin URL, not routed
+		// through any image function. Block themes use core/site-logo (covered).
+		add_filter( 'theme_mod_header_image', [ $this, 'filter_header_image_url' ], 10 );
+		add_filter( 'get_header_image', [ $this, 'filter_header_image_url' ], 10 );
+
 		// Responsive image srcset substitution with proper order.
 		add_filter( 'wp_calculate_image_srcset_meta', [ $this, 'filter_srcset_meta' ], 5, 4 );
 		add_filter( 'wp_calculate_image_srcset', [ $this, 'filter_srcset_array' ], 10, 5 );
@@ -234,7 +247,7 @@ class ImageController extends Controller {
 		}
 
 		// Get the original image URL.
-		$original_url = wp_get_attachment_url( $attachment_id );
+		$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 		if ( empty( $original_url ) ) {
 			return $image;
 		}
@@ -370,7 +383,7 @@ class ImageController extends Controller {
 		}
 
 		// Get the original image URL.
-		$original_url = wp_get_attachment_url( $attachment_id );
+		$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 		if ( empty( $original_url ) ) {
 			return $image;
 		}
@@ -494,7 +507,7 @@ class ImageController extends Controller {
 		do_action( 'bunnify_processing_attachment_image', $attachment_id, $size, $html );
 
 		// Get the original image URL (not the resized one).
-		$original_url = wp_get_attachment_url( $attachment_id );
+		$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 		if ( empty( $original_url ) ) {
 			return $html;
 		}
@@ -680,7 +693,7 @@ class ImageController extends Controller {
 			return $response;
 		}
 
-		$original_url = wp_get_attachment_url( $attachment_id );
+		$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 		if ( empty( $original_url ) || ! URLTransformer::validate_image_url( $original_url ) ) {
 			return $response;
 		}
@@ -725,6 +738,92 @@ class ImageController extends Controller {
 	}
 
 	/**
+	 * Rewrite a bare attachment URL to the CDN.
+	 *
+	 * `wp_get_attachment_url()` is the canonical "give me this attachment's URL"
+	 * call — used by themes, page builders (ACF URL fields), block bindings,
+	 * feeds, and the REST media endpoint's `source_url`. None of those go through
+	 * the `<img>`/resize pipeline the other filters cover, so their URLs stay on
+	 * the origin host (404 on an install without synced uploads; CDN-bypass in
+	 * production) unless rewritten here.
+	 *
+	 * Re-entrancy: the plugin calls `wp_get_attachment_url()` internally through
+	 * {@see \BunnifyFrontend\Library\AttachmentUrl::origin()} to obtain the
+	 * origin URL; that sets a suspend flag, so this callback returns the input
+	 * untouched during an internal lookup — which both prevents recursion and
+	 * keeps every internal origin lookup returning origin.
+	 *
+	 * @param string $url     The attachment URL.
+	 * @param int    $post_id The attachment ID.
+	 * @return string The (possibly CDN-rewritten) URL.
+	 */
+	public function filter_attachment_url( $url, $post_id ) {
+		// (a) Internal origin lookup in progress — never rewrite it.
+		if ( \BunnifyFrontend\Library\AttachmentUrl::is_suspended() ) {
+			return $url;
+		}
+
+		if ( ! is_string( $url ) || '' === $url ) {
+			return $url;
+		}
+
+		// (b) Same admin posture as the other image filters.
+		if ( $this->is_admin_without_local_dev()
+			&& false === apply_filters( 'bunnify_admin_allow_attachment_url', false, $url, $post_id ) ) {
+			return $url;
+		}
+
+		// (c) Images only by default; already-CDN URLs are left alone.
+		if ( ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
+			return $url;
+		}
+
+		// (d) Local-dev: a locally-present original stays on origin.
+		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled()
+			&& URLTransformer::image_exists_locally( $url ) ) {
+			return $url;
+		}
+
+		// (e) Full-size CDN URL (no args → preserves the original filename).
+		// get_cdn_url_by_id() calls AttachmentUrl::origin() internally, so the
+		// suspend flag is set during that inner call: no recursion, no double
+		// transform. A null return ("CDN unavailable") keeps the origin URL.
+		$cdn_url = URLTransformer::get_cdn_url_by_id( (int) $post_id );
+
+		return $cdn_url ?: $url;
+	}
+
+	/**
+	 * Rewrite a classic-theme custom header image URL to the CDN.
+	 *
+	 * `get_header_image()` and the `header_image` theme mod return a stored
+	 * absolute origin URL, not via any attachment function — so no other filter
+	 * sees it. The header is frequently the LCP element, so this is a high-value
+	 * bare URL on classic (non-FSE) themes. Reuses the public `bunnify_url`
+	 * path, which resolves the attachment ID, honours `bunnify_skip_for_url`,
+	 * and applies the enabled/hostname gating.
+	 *
+	 * @param mixed $url The header image URL (or a sentinel like 'remove-header').
+	 * @return mixed The (possibly CDN-rewritten) URL.
+	 */
+	public function filter_header_image_url( $url ) {
+		if ( ! is_string( $url ) || '' === $url || 'remove-header' === $url ) {
+			return $url;
+		}
+
+		if ( ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
+			return $url;
+		}
+
+		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled()
+			&& URLTransformer::image_exists_locally( $url ) ) {
+			return $url;
+		}
+
+		return (string) apply_filters( 'bunnify_url', $url );
+	}
+
+	/**
 	 * Filter srcset array to transform URLs to CDN while preserving dimensions.
 	 *
 	 * @param array  $sources Array of image sources.
@@ -744,7 +843,7 @@ class ImageController extends Controller {
 		}
 
 		// Get the original image URL.
-		$original_url = wp_get_attachment_url( $attachment_id );
+		$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 		if ( empty( $original_url ) ) {
 			$this->debug_log( "No original URL found for attachment_id: {$attachment_id}", 'filter_srcset_array' );
 			return $sources;

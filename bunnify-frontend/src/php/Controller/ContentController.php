@@ -135,7 +135,7 @@ class ContentController extends Controller {
 				if ( $attachment_id ) {
 					// Check local development mode first.
 					if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled() ) {
-						$original_url = wp_get_attachment_url( $attachment_id );
+						$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 						if ( $original_url && URLTransformer::image_exists_locally( $original_url ) ) {
 							$this->debug_log( "Local development mode enabled and image exists locally: {$original_url}, bypassing CDN transformation", 'content_processing' );
 							continue; // Skip CDN transformation for this image.
@@ -200,7 +200,104 @@ class ContentController extends Controller {
 			}
 		}
 
+		// Second pass: inline background-image URLs on block wrappers
+		// (core/cover fixed/repeat, core/group, core/columns) — not <img> tags.
+		return $this->process_background_images( $processor->get_updated_html() );
+	}
+
+	/**
+	 * Rewrite inline `background-image: url(...)` values to the CDN.
+	 *
+	 * Block wrappers (core/cover with a fixed/repeated background, and the
+	 * core/group / core/columns background support in WP 6.5+) render the image
+	 * as an inline `style` attribute, not an `<img>`, so the img loop never sees
+	 * it. Only inline styles on tags in post content are handled — no external
+	 * or `<style>`-block CSS parsing (that would be heavy and fragile).
+	 *
+	 * @param string $content The (already img-processed) content HTML.
+	 * @return string Content with CDN-rewritten background-image URLs.
+	 */
+	private function process_background_images( string $content ): string {
+		// Cheap fast-path: skip the whole pass when there is no background image.
+		if ( false === stripos( $content, 'background-image' ) ) {
+			return $content;
+		}
+
+		$processor = new WP_HTML_Tag_Processor( $content );
+
+		while ( $processor->next_tag() ) {
+			$style = $processor->get_attribute( 'style' );
+			if ( ! is_string( $style ) || false === stripos( $style, 'background-image' ) ) {
+				continue;
+			}
+
+			$new_style = preg_replace_callback(
+				'/url\(\s*([\'"]?)([^\'")]+)\1\s*\)/i',
+				function ( $matches ) {
+					$original = trim( $matches[2] );
+
+					/**
+					 * Allow specific background-image URLs to skip CDN rewriting.
+					 *
+					 * @param bool   $skip     Whether to skip. Default false.
+					 * @param string $original The background image URL.
+					 */
+					if ( apply_filters( 'bunnify_skip_background_image', false, $original ) ) {
+						return $matches[0];
+					}
+
+					$cdn = $this->rewrite_loose_image_url( $original );
+					return $cdn ? 'url(' . $matches[1] . $cdn . $matches[1] . ')' : $matches[0];
+				},
+				$style
+			);
+
+			if ( is_string( $new_style ) && $new_style !== $style ) {
+				$processor->set_attribute( 'style', $new_style );
+			}
+		}
+
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Gated URL→CDN rewrite for a loose image URL (background images, etc.).
+	 *
+	 * Mirrors the content-image gating: images only, skip already-CDN URLs, and
+	 * in local-dev mode leave a locally-present original on origin. Resolves an
+	 * attachment ID (to preserve the original filename and carry any
+	 * filename-encoded dimensions) and falls back to a direct transform.
+	 *
+	 * @param string $url The candidate image URL.
+	 * @return string|null The CDN URL, or null to leave the original untouched.
+	 */
+	private function rewrite_loose_image_url( string $url ): ?string {
+		if ( '' === $url || ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
+			return null;
+		}
+
+		$attachment_id = ImageProcessor::get_attachment_id_from_url( $url );
+
+		if ( $attachment_id ) {
+			if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled() ) {
+				$origin = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
+				if ( $origin && URLTransformer::image_exists_locally( $origin ) ) {
+					return null; // Keep the local origin file.
+				}
+			}
+
+			$dimensions = ImageProcessor::parse_dimensions_from_filename( $url );
+			$cdn_args   = $dimensions ? [
+				'width'  => $dimensions[0],
+				'height' => $dimensions[1],
+			] : [];
+
+			return URLTransformer::get_cdn_url_by_id( $attachment_id, $cdn_args ) ?: null;
+		}
+
+		// Non-attachment upload: direct transform (honours local-dev internally).
+		$cdn = $this->transform_url_direct( $url );
+		return $cdn ?: null;
 	}
 
 	/**
@@ -213,7 +310,7 @@ class ContentController extends Controller {
 	private function transform_srcset_for_content( string $srcset_value, int $attachment_id ): string|false {
 		// Check local development mode first.
 		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled() ) {
-			$original_url = wp_get_attachment_url( $attachment_id );
+			$original_url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 			if ( $original_url && URLTransformer::image_exists_locally( $original_url ) ) {
 				$this->debug_log( "Local development mode enabled and image exists locally: {$original_url}, bypassing srcset transformation", 'content_processing' );
 				return false; // Return false to keep original srcset unchanged.

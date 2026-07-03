@@ -155,7 +155,7 @@ trait CachingTrait {
 		$url = $this->get_cached_value( $cache_key );
 
 		if ( false === $url ) {
-			$url = wp_get_attachment_url( $attachment_id );
+			$url = \BunnifyFrontend\Library\AttachmentUrl::origin( $attachment_id );
 			$ttl = $this->get_attachment_cache_ttl( $attachment_id );
 			$this->set_cached_value( $cache_key, $url ?: 'not_found', $ttl );
 		}

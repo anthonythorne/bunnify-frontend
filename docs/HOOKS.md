@@ -22,6 +22,8 @@ This document lists all WordPress hooks and filters used by the Bunnify Frontend
 - `widget_media_image_instance` - Processes media widget images
 - `render_block` - Processes block content for images
 - `render_block_core/gallery` - Processes gallery blocks specifically
+- `wp_get_attachment_url` - Rewrites bare attachment URLs (ACF/theme/REST `source_url`), guarded against re-entrancy
+- `theme_mod_header_image` / `get_header_image` - Rewrites the classic-theme custom header image
 
 ### REST API posture
 
@@ -46,6 +48,23 @@ add_action( 'bunnify_processing_attachment_image', function( $attachment_id, $si
 ```
 
 ## Custom Filters Provided
+
+### `bunnify_admin_allow_attachment_url`
+Return `true` to allow `wp_get_attachment_url()` rewriting in admin context
+(off by default, matching the other admin guards).
+
+```php
+add_filter( 'bunnify_admin_allow_attachment_url', '__return_true' );
+```
+
+### `bunnify_skip_background_image`
+Return `true` to leave a specific inline `background-image` URL on the origin.
+
+```php
+add_filter( 'bunnify_skip_background_image', function ( $skip, $url ) {
+    return str_contains( $url, '/keep-local/' ) ? true : $skip;
+}, 10, 2 );
+```
 
 ### `bunnify_url`
 Filters the final CDN URL before it's returned.

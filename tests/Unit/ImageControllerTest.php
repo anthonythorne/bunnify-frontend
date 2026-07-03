@@ -139,6 +139,40 @@ final class ImageControllerTest extends TestCase {
 		);
 	}
 
+	public function test_attachment_url_passes_non_strings_through(): void {
+		$this->assertFalse( ( new ImageController() )->filter_attachment_url( false, 7 ) );
+		$this->assertSame( '', ( new ImageController() )->filter_attachment_url( '', 7 ) );
+	}
+
+	public function test_attachment_url_is_a_no_op_while_suspended(): void {
+		// While an internal origin lookup is in flight the filter must return the
+		// URL untouched — this is the re-entrancy guard.
+		$prop = new \ReflectionProperty( \BunnifyFrontend\Library\AttachmentUrl::class, 'suspend' );
+		$prop->setAccessible( true );
+		$prop->setValue( null, true );
+
+		try {
+			$this->assertSame(
+				'https://origin.example.com/a.jpg',
+				( new ImageController() )->filter_attachment_url( 'https://origin.example.com/a.jpg', 7 )
+			);
+		} finally {
+			$prop->setValue( null, false );
+		}
+	}
+
+	public function test_attachment_url_left_untouched_in_admin_off_local_dev(): void {
+		Functions\when( 'is_admin' )->justReturn( true );
+		Functions\when( 'wp_get_environment_type' )->justReturn( 'production' );
+		Functions\when( 'get_option' )->justReturn( false );
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+
+		$this->assertSame(
+			'https://origin.example.com/a.jpg',
+			( new ImageController() )->filter_attachment_url( 'https://origin.example.com/a.jpg', 7 )
+		);
+	}
+
 	public function test_attachment_for_js_leaves_admin_untouched_off_local_dev(): void {
 		// Production admin (local-dev off): the media library keeps origin URLs,
 		// exactly as before — this is the behaviour production relies on.
