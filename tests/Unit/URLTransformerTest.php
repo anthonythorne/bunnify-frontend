@@ -24,6 +24,14 @@ final class URLTransformerTest extends TestCase {
 	 */
 	private function make( string $hostname = 'cdn.example.com' ): URLTransformer {
 		Functions\when( 'sanitize_text_field' )->returnArg();
+		// Format negotiation reads these in build_query_string(); default to
+		// "off" (the option's own default) unless a test overrides them.
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default = false ) {
+				return $default;
+			}
+		);
+		Functions\when( 'apply_filters' )->returnArg( 2 );
 
 		return new URLTransformer( $hostname );
 	}
@@ -149,6 +157,87 @@ final class URLTransformerTest extends TestCase {
 					'crop'  => '300,200',
 				)
 			)
+		);
+	}
+
+	/**
+	 * Stub get_option + apply_filters so format-negotiation reads specific
+	 * quality/format option values (and no filter override).
+	 *
+	 * @param array $options Option map.
+	 */
+	private function stub_format_options( array $options ): void {
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default = false ) use ( $options ) {
+				return array_key_exists( $name, $options ) ? $options[ $name ] : $default;
+			}
+		);
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+	}
+
+	public function test_format_negotiation_off_by_default_is_byte_parity(): void {
+		// No options set → no quality/format params, output identical to before.
+		$transformer = $this->make();
+		$this->stub_format_options( array() );
+
+		$this->assertSame(
+			'width=300&height=200',
+			$this->build_query_string( $transformer, array( 'width' => 300, 'height' => 200 ) )
+		);
+	}
+
+	public function test_format_negotiation_emits_quality_and_format_when_configured(): void {
+		// Build the transformer first: make() stubs get_option, so the option
+		// overrides must be applied after construction.
+		$transformer = $this->make();
+		$this->stub_format_options(
+			array(
+				'bunnify_default_quality' => '75',
+				'bunnify_format'          => 'webp',
+			)
+		);
+
+		$this->assertSame(
+			'width=300&quality=75&format=webp',
+			$this->build_query_string( $transformer, array( 'width' => 300 ) )
+		);
+	}
+
+	public function test_format_negotiation_explicit_args_win_over_defaults(): void {
+		$transformer = $this->make();
+		$this->stub_format_options(
+			array(
+				'bunnify_default_quality' => '75',
+				'bunnify_format'          => 'webp',
+			)
+		);
+
+		// A caller passing its own quality/format must not be overridden.
+		$this->assertSame(
+			'width=300&quality=40&format=avif',
+			$this->build_query_string(
+				$transformer,
+				array(
+					'width'   => 300,
+					'quality' => 40,
+					'format'  => 'avif',
+				)
+			)
+		);
+	}
+
+	public function test_format_negotiation_ignores_out_of_range_quality_and_bad_format(): void {
+		$transformer = $this->make();
+		$this->stub_format_options(
+			array(
+				'bunnify_default_quality' => '0',
+				'bunnify_format'          => 'gif',
+			)
+		);
+
+		$this->assertSame(
+			'width=300',
+			$this->build_query_string( $transformer, array( 'width' => 300 ) )
 		);
 	}
 

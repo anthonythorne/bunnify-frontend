@@ -210,6 +210,44 @@ class URLTransformer {
 			$query_parts['c'] = 1;
 		}
 
+		// Format negotiation (opt-in; off by default so output is byte-identical).
+		// Explicit per-image args win — these only fill in when the caller did
+		// not set quality/format themselves. Verified Bunny Optimizer params:
+		// `quality` (1-100) and `format` (webp/avif); see the format-negotiation
+		// blueprint. AVIF is emitted on request but has limited browser support.
+		$has_arg = static function ( $key ) use ( $args ) {
+			return is_array( $args ) && array_key_exists( $key, $args );
+		};
+
+		if ( ! $has_arg( 'quality' ) ) {
+			/**
+			 * Default image quality (1-100) for CDN transforms.
+			 *
+			 * @param string|int $quality Stored `bunnify_default_quality` (empty = the CDN's own default).
+			 * @param array       $args    The transform args.
+			 */
+			$quality = apply_filters( 'bunnify_default_quality', get_option( 'bunnify_default_quality', '' ), $args );
+			if ( '' !== (string) $quality ) {
+				$quality = (int) $quality;
+				if ( $quality >= 1 && $quality <= 100 ) {
+					$query_parts['quality'] = $quality;
+				}
+			}
+		}
+
+		if ( ! $has_arg( 'format' ) ) {
+			/**
+			 * Default output format for CDN transforms.
+			 *
+			 * @param string $format Stored `bunnify_format` ('webp'/'avif'; empty = original format).
+			 * @param array  $args   The transform args.
+			 */
+			$format = apply_filters( 'bunnify_format', get_option( 'bunnify_format', '' ), $args );
+			if ( in_array( $format, [ 'webp', 'avif' ], true ) ) {
+				$query_parts['format'] = $format;
+			}
+		}
+
 		/**
 		 * Pass through additional Bunny transform arguments.
 		 *

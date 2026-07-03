@@ -1,6 +1,6 @@
 # Format negotiation: next-gen formats & tuned quality
 
-- **Status:** Proposed
+- **Status:** Implemented (2026-07-03)
 - **Created:** 2026-07-03
 - **Owner:** _unassigned_
 - **Related:** [[cwv-image-delivery]] (the Core Web Vitals image-delivery story this feeds — smaller bytes, faster LCP), [[data-driven-settings]] (the settings schema these two new options should ultimately register through)

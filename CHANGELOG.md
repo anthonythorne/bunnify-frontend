@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Format negotiation (opt-in): a **Image Quality** (1-100) and **Image Format**
+  (WebP / AVIF) setting that append the verified Bunny Optimizer `quality=` /
+  `format=` params to generated CDN URLs. Off by default (output byte-identical);
+  explicit per-image args and the `bunnify_default_quality` / `bunnify_format`
+  filters take precedence; `is_cdn_url()` already treats those params as CDN
+  markers so already-processed detection is unaffected. AVIF is offered but
+  flagged experimental (limited browser support).
 - URL-surface coverage for bare attachment URLs. Beyond the `<img>`/resize
   pipeline, the plugin now rewrites `wp_get_attachment_url()` (ACF URL fields,
   theme templates, REST `source_url`, block bindings), the classic-theme custom
