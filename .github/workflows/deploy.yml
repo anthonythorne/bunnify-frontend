@@ -1,23 +1,39 @@
 name: Deploy to WordPress.org
 
 # ┌──────────────────────────────────────────────────────────────────────────┐
-# │ NOT ENABLED. This plugin is not ready for a wordpress.org release yet.     │
+# │ NOT ENABLED. This plugin is not ready for a wordpress.org release yet, and │
+# │ must never publish automatically or by accident.                          │
 # └──────────────────────────────────────────────────────────────────────────┘
 #
-# Two independent guardrails keep this from publishing prematurely:
-#   1. Manual trigger only. The automatic `release:` trigger is commented out,
-#      so publishing a GitHub Release will NOT deploy anything.
-#   2. Even a manual run is skipped unless the repository variable
-#      WPORG_RELEASE_ENABLED is exactly 'true'.
+# THREE independent guardrails must all be satisfied to publish. Any one of
+# them failing is a hard stop, so no push, tag, GitHub Release, or downstream
+# deployment can ever trigger a wordpress.org release:
 #
-# To enable a real release later:
+#   1. Manual trigger only. The only entry point is `workflow_dispatch` (a
+#      human clicking "Run workflow"). There is NO push/tag/release trigger —
+#      the `release:` trigger is commented out — so ordinary repo activity and
+#      any CI/CD deploy cannot start this workflow.
+#   2. Typed confirmation. Even a manual run does nothing unless the operator
+#      types the exact phrase `PUBLISH bunnify-frontend` into the `confirm`
+#      input, so an accidental click on "Run workflow" is a no-op.
+#   3. Repository opt-in variable. The job is skipped unless the repository
+#      variable WPORG_RELEASE_ENABLED is exactly the string 'true'.
+#
+# To enable a real release later (deliberately):
 #   - add the SVN_USERNAME / SVN_PASSWORD secrets (a wordpress.org account with
 #     commit access to the approved `bunnify-frontend` plugin);
 #   - set the repository variable WPORG_RELEASE_ENABLED = true;
-#   - uncomment the `release:` trigger below.
+#   - run this workflow manually and type the confirmation phrase.
+#   (Leave the `release:` trigger commented out unless you truly want every
+#    published GitHub Release to ship to wordpress.org.)
 
 on:
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type 'PUBLISH bunnify-frontend' to confirm a wordpress.org release."
+        required: true
+        default: ''
   # release:
   #   types: [ published ]
 
@@ -28,9 +44,18 @@ jobs:
   deploy:
     name: Deploy to WordPress.org SVN
     runs-on: ubuntu-latest
-    # Hard stop until the plugin is explicitly marked ready for release.
-    if: ${{ vars.WPORG_RELEASE_ENABLED == 'true' }}
+    # Hard stop: BOTH the repository opt-in variable AND the typed confirmation
+    # must match, or the job does not run at all.
+    if: ${{ vars.WPORG_RELEASE_ENABLED == 'true' && github.event.inputs.confirm == 'PUBLISH bunnify-frontend' }}
     steps:
+      - name: Re-assert the release guard (defence in depth)
+        run: |
+          if [ "${{ vars.WPORG_RELEASE_ENABLED }}" != "true" ] || [ "${{ github.event.inputs.confirm }}" != "PUBLISH bunnify-frontend" ]; then
+            echo "::error::Release guard not satisfied — refusing to publish." >&2
+            exit 1
+          fi
+          echo "Release guard satisfied; proceeding with wordpress.org deploy."
+
       - name: Checkout
         uses: actions/checkout@v4
 
