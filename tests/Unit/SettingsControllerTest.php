@@ -86,9 +86,9 @@ final class SettingsControllerTest extends TestCase {
 		);
 	}
 
-	public function test_local_dev_auto_on_for_non_production(): void {
+	public function test_local_dev_auto_on_for_development_environments(): void {
 		// No filter, no option — enabled purely by the environment type.
-		foreach ( array( 'local', 'staging', 'development' ) as $environment ) {
+		foreach ( array( 'local', 'development' ) as $environment ) {
 			$this->stub_local_dev( null, $environment, false );
 
 			$this->assertTrue(
@@ -96,6 +96,17 @@ final class SettingsControllerTest extends TestCase {
 				"local-dev should auto-enable on '{$environment}'"
 			);
 		}
+	}
+
+	public function test_local_dev_not_auto_on_for_staging(): void {
+		// Staging is deliberately excluded so it still exercises the CDN
+		// before a production promotion; it falls through to the option.
+		$this->stub_local_dev( null, 'staging', false );
+		$this->assertFalse( SettingsController::is_local_dev_mode_enabled() );
+
+		// ...but the option can force it on for a staging box that needs it.
+		$this->stub_local_dev( null, 'staging', '1' );
+		$this->assertTrue( SettingsController::is_local_dev_mode_enabled() );
 	}
 
 	public function test_local_dev_off_on_production_by_default(): void {

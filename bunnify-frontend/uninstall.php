@@ -39,12 +39,20 @@ function bunnify_frontend_uninstall_site(): void {
 		delete_option( $option );
 	}
 
-	// Remove the debug log file if present.
+	// Remove the debug log directory (uploads/bunnify-logs/) and its contents.
 	$upload_dir = wp_get_upload_dir();
 	if ( ! empty( $upload_dir['basedir'] ) ) {
-		$log_file = trailingslashit( $upload_dir['basedir'] ) . 'bunnify-debug.log';
-		if ( file_exists( $log_file ) ) {
-			wp_delete_file( $log_file );
+		$log_dir = trailingslashit( $upload_dir['basedir'] ) . 'bunnify-logs';
+		if ( is_dir( $log_dir ) ) {
+			global $wp_filesystem;
+			if ( ! $wp_filesystem ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				WP_Filesystem();
+			}
+			if ( $wp_filesystem ) {
+				// Recursive delete: log file, hardening files, then the directory.
+				$wp_filesystem->delete( $log_dir, true );
+			}
 		}
 	}
 }

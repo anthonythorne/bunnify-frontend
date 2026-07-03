@@ -50,11 +50,11 @@ This plugin is ideal for:
 - **Enabled**: Checkbox to enable/disable the functionality
 
 ### Development Settings
-- **Local Development Mode**: When enabled, bypasses CDN processing for images that exist locally on the filesystem
-- **Debug Logging**: Enable comprehensive logging for troubleshooting
-- **Debug Refreshes**: Number of page loads to keep in debug log (1-100)
+- **Local Development Mode**: Serves the local file when it exists and falls back to the CDN for missing images. Auto-enabled on `local`/`development` environments (via `wp_get_environment_type()`); `staging` and `production` are off by default.
+- **Debug Logging**: Enable per-category logging for troubleshooting. Logging runs automatically for the enabled categories when a front-end page loads.
+- **Log Lines to Keep**: Number of log lines retained before the oldest are trimmed (1-100).
 
-**Note:** When debug logging is enabled, you must add `?bunnify_debug=1` to any page URL you want to debug. For example: `https://yoursite.com/page?bunnify_debug=1`
+**Note:** Logs are written to `wp-content/uploads/bunnify-logs/debug.log` (a hardened, non-browsable directory).
 
 ## Local Development Mode
 

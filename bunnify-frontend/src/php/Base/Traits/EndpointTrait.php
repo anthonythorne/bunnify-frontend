@@ -31,7 +31,8 @@ trait EndpointTrait {
 	 * @return mixed|string The value for the parameter or the default.
 	 */
 	public function get_param( string $param, $default_value = '' ) {
-		return $_REQUEST[ $param ] ?? $default_value; // phpcs:ignore
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only parameter accessor; callers verify context.
+		return isset( $_REQUEST[ $param ] ) ? sanitize_text_field( wp_unslash( $_REQUEST[ $param ] ) ) : $default_value;
 	}
 
 	/**

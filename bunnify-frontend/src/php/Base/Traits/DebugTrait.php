@@ -92,18 +92,29 @@ trait DebugTrait {
 	}
 
 	/**
-	 * Get the debug log file path.
+	 * Get the debug log file path, creating a hardened log directory.
+	 *
+	 * The directory gets an index.php and a Require-all-denied .htaccess so the
+	 * log (which can contain absolute server paths) is not browsable on hosts
+	 * that honour them.
 	 *
 	 * @return string|false The log file path or false if not available.
 	 */
 	protected function get_debug_log_file() {
 		if ( null === self::$debug_log_file ) {
 			$upload_dir = wp_upload_dir();
-			$log_dir = $upload_dir['basedir'] . '/bunnify-logs';
-			
-			// Create log directory if it doesn't exist.
+			$log_dir    = $upload_dir['basedir'] . '/bunnify-logs';
+
+			// Create and harden the log directory if it doesn't exist.
 			if ( ! is_dir( $log_dir ) ) {
 				wp_mkdir_p( $log_dir );
+
+				if ( ! file_exists( $log_dir . '/index.php' ) ) {
+					file_put_contents( $log_dir . '/index.php', "<?php\n// Silence is golden.\n" );
+				}
+				if ( ! file_exists( $log_dir . '/.htaccess' ) ) {
+					file_put_contents( $log_dir . '/.htaccess', "Require all denied\n" );
+				}
 			}
 
 			self::$debug_log_file = $log_dir . '/debug.log';

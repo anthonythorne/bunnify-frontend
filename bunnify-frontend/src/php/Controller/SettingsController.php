@@ -4,7 +4,7 @@
  *
  * Handles admin settings page, options registration, and admin-only hooks.
  *
- * File Path: src/php/Controller/Settings.php
+ * File Path: src/php/Controller/SettingsController.php
  *
  * @package BunnifyFrontend
  * @since   1.0.0
@@ -24,6 +24,22 @@ use BunnifyFrontend\Base\Main\Controller;
 class SettingsController extends Controller {
 
 	/**
+	 * Debug log path relative to the uploads directory.
+	 *
+	 * Kept in sync with DebugTrait (the writer) and uninstall.php (the cleaner).
+	 */
+	private const LOG_SUBPATH = 'bunnify-logs/debug.log';
+
+	/**
+	 * Environment types on which local-dev mode auto-enables.
+	 *
+	 * Development-class only: `staging` is deliberately excluded so a staging
+	 * box that mirrors production still exercises the CDN (rather than serving
+	 * origin files it happens to have on disk).
+	 */
+	private const LOCAL_DEV_ENVIRONMENTS = array( 'local', 'development' );
+
+	/**
 	 * Initialize WordPress hooks for admin functionality.
 	 */
 	public function set_up() {
@@ -37,8 +53,8 @@ class SettingsController extends Controller {
 	public function add_admin_menu() {
 		add_submenu_page(
 			'upload.php',
-			'BunnyCDN',
-			'BunnyCDN',
+			__( 'BunnyCDN', 'bunnify-frontend' ),
+			__( 'BunnyCDN', 'bunnify-frontend' ),
 			'manage_options',
 			'bunnify-frontend',
 			[ $this, 'admin_page' ],
@@ -49,30 +65,51 @@ class SettingsController extends Controller {
 	 * Initialize settings.
 	 */
 	public function init_settings() {
-		register_setting( 'bunnify_frontend_options', 'bunnify_enabled' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_hostname' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_enabled' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_refreshes' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_local_dev_mode' );
+		$checkbox = array(
+			'type'              => 'string',
+			'sanitize_callback' => [ $this, 'sanitize_checkbox' ],
+		);
+
+		register_setting( 'bunnify_frontend_options', 'bunnify_enabled', $checkbox );
+		register_setting(
+			'bunnify_frontend_options',
+			'bunnify_hostname',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => [ $this, 'sanitize_hostname' ],
+				'default'           => '',
+			)
+		);
+		register_setting(
+			'bunnify_frontend_options',
+			'bunnify_debug_refreshes',
+			array(
+				'type'              => 'integer',
+				'sanitize_callback' => [ $this, 'sanitize_refreshes' ],
+				'default'           => 10,
+			)
+		);
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_enabled', $checkbox );
+		register_setting( 'bunnify_frontend_options', 'bunnify_local_dev_mode', $checkbox );
 
 		// Categorized debug logging settings.
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_url_transformation' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_image_processing' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_srcset_generation' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_content_filtering' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_local_dev_mode' );
-		register_setting( 'bunnify_frontend_options', 'bunnify_debug_performance' );
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_url_transformation', $checkbox );
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_image_processing', $checkbox );
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_srcset_generation', $checkbox );
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_content_filtering', $checkbox );
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_local_dev_mode', $checkbox );
+		register_setting( 'bunnify_frontend_options', 'bunnify_debug_performance', $checkbox );
 
 		add_settings_section(
 			'bunnify_frontend_settings_section',
-			'BunnyCDN Configuration',
+			__( 'BunnyCDN Configuration', 'bunnify-frontend' ),
 			[ $this, 'settings_section_callback' ],
 			'bunnify-frontend',
 		);
 
 		add_settings_field(
 			'bunnify_enabled_field',
-			'Enable BunnyCDN',
+			__( 'Enable BunnyCDN', 'bunnify-frontend' ),
 			[ $this, 'enabled_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_settings_section',
@@ -80,7 +117,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_hostname_field',
-			'BunnyCDN Hostname',
+			__( 'BunnyCDN Hostname', 'bunnify-frontend' ),
 			[ $this, 'hostname_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_settings_section',
@@ -88,7 +125,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_local_dev_mode_field',
-			'Local Development Mode',
+			__( 'Local Development Mode', 'bunnify-frontend' ),
 			[ $this, 'local_dev_mode_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_settings_section',
@@ -97,14 +134,14 @@ class SettingsController extends Controller {
 		// Debug logging section.
 		add_settings_section(
 			'bunnify_frontend_debug_section',
-			'Debug Logging',
+			__( 'Debug Logging', 'bunnify-frontend' ),
 			[ $this, 'debug_section_callback' ],
 			'bunnify-frontend',
 		);
 
 		add_settings_field(
 			'bunnify_debug_enabled_field',
-			'Enable Debug Logging',
+			__( 'Enable Debug Logging', 'bunnify-frontend' ),
 			[ $this, 'debug_enabled_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -112,7 +149,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_refreshes_field',
-			'Debug Refreshes to Keep',
+			__( 'Log Lines to Keep', 'bunnify-frontend' ),
 			[ $this, 'debug_refreshes_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -120,7 +157,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_url_transformation_field',
-			'URL Transformation',
+			__( 'URL Transformation', 'bunnify-frontend' ),
 			[ $this, 'debug_url_transformation_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -128,7 +165,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_image_processing_field',
-			'Image Processing',
+			__( 'Image Processing', 'bunnify-frontend' ),
 			[ $this, 'debug_image_processing_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -136,7 +173,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_srcset_generation_field',
-			'Srcset Generation',
+			__( 'Srcset Generation', 'bunnify-frontend' ),
 			[ $this, 'debug_srcset_generation_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -144,7 +181,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_content_filtering_field',
-			'Content Filtering',
+			__( 'Content Filtering', 'bunnify-frontend' ),
 			[ $this, 'debug_content_filtering_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -152,7 +189,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_local_dev_mode_field',
-			'Local Development Mode',
+			__( 'Local Development Mode', 'bunnify-frontend' ),
 			[ $this, 'debug_local_dev_mode_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -160,7 +197,7 @@ class SettingsController extends Controller {
 
 		add_settings_field(
 			'bunnify_debug_performance_field',
-			'Performance',
+			__( 'Performance', 'bunnify-frontend' ),
 			[ $this, 'debug_performance_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_debug_section',
@@ -168,17 +205,65 @@ class SettingsController extends Controller {
 	}
 
 	/**
+	 * Sanitize a checkbox value to the canonical '1' (on) or '0' (off).
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @return string '1' or '0'.
+	 */
+	public function sanitize_checkbox( $value ): string {
+		return $value ? '1' : '0';
+	}
+
+	/**
+	 * Sanitize the CDN hostname to a bare host (no scheme, path, or whitespace).
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @return string Sanitized hostname.
+	 */
+	public function sanitize_hostname( $value ): string {
+		$value = sanitize_text_field( (string) $value );
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		// Accept a full URL or a bare host; reduce to the host component.
+		if ( false !== strpos( $value, '//' ) ) {
+			$host = wp_parse_url( $value, PHP_URL_HOST );
+			if ( is_string( $host ) && '' !== $host ) {
+				return $host;
+			}
+		}
+
+		// Strip any accidental path/query and a trailing slash.
+		$value = preg_replace( '#[/?].*$#', '', $value );
+
+		return is_string( $value ) ? $value : '';
+	}
+
+	/**
+	 * Sanitize the log-line retention count to an integer in [1, 100].
+	 *
+	 * @param mixed $value Raw submitted value.
+	 * @return int Clamped value.
+	 */
+	public function sanitize_refreshes( $value ): int {
+		return max( 1, min( 100, (int) $value ) );
+	}
+
+	/**
 	 * Settings section callback.
 	 */
 	public function settings_section_callback() {
-		echo '<p>Configure BunnyCDN settings. This plugin provides simplified image CDN functionality for your WordPress media.</p>';
+		echo '<p>' . esc_html__( 'Configure BunnyCDN settings. This plugin provides simplified image CDN functionality for your WordPress media.', 'bunnify-frontend' ) . '</p>';
 	}
 
 	/**
 	 * Debug section callback.
 	 */
 	public function debug_section_callback() {
-		echo '<p>Configure debug logging options to track image processing and performance.</p>';
+		echo '<p>' . esc_html__( 'Configure debug logging options to track image processing and performance.', 'bunnify-frontend' ) . '</p>';
 	}
 
 	/**
@@ -193,7 +278,7 @@ class SettingsController extends Controller {
 		?>
 		<input type="hidden" name="bunnify_enabled" value="0" />
 		<input type="checkbox" name="bunnify_enabled" value="1" <?php checked( true, self::is_enabled(), true ); ?> />
-		<p class="description">Enable BunnyCDN functionality for your media.</p>
+		<p class="description"><?php esc_html_e( 'Enable BunnyCDN functionality for your media.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -201,11 +286,10 @@ class SettingsController extends Controller {
 	 * Hostname field callback.
 	 */
 	public function hostname_field_callback() {
-		$hostname = get_option( 'bunnify_hostname' );
 		?>
-		<input type="text" name="bunnify_hostname" value="<?php echo isset( $hostname ) ? esc_attr( $hostname ) : ''; ?>"
+		<input type="text" name="bunnify_hostname" value="<?php echo esc_attr( (string) get_option( 'bunnify_hostname', '' ) ); ?>"
 			class="regular-text" />
-		<p class="description">Your BunnyCDN hostname (e.g., cdn.example.com).</p>
+		<p class="description"><?php esc_html_e( 'Your BunnyCDN hostname (e.g., cdn.example.com).', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -216,7 +300,15 @@ class SettingsController extends Controller {
 		$debug_enabled = get_option( 'bunnify_debug_enabled' );
 		?>
 		<input type="checkbox" name="bunnify_debug_enabled" value="1" <?php checked( 1, $debug_enabled, true ); ?> />
-		<p class="description">Enable debug logging to track image processing. Logs are stored in wp-content/uploads/bunnify-debug.log.</p>
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: the debug log file path. */
+				esc_html__( 'Enable debug logging to track image processing. Logs are stored in %s.', 'bunnify-frontend' ),
+				'<code>' . esc_html( self::get_debug_log_relative_path() ) . '</code>'
+			);
+			?>
+		</p>
 		<?php
 	}
 
@@ -226,8 +318,8 @@ class SettingsController extends Controller {
 	public function debug_refreshes_field_callback() {
 		$debug_refreshes = get_option( 'bunnify_debug_refreshes', 10 );
 		?>
-		<input type="number" name="bunnify_debug_refreshes" value="<?php echo esc_attr( $debug_refreshes ); ?>" min="1" max="100" class="small-text" />
-		<p class="description">Number of page refreshes to keep in the debug log (1-100). Each page refresh is marked with a separator.</p>
+		<input type="number" name="bunnify_debug_refreshes" value="<?php echo esc_attr( (string) $debug_refreshes ); ?>" min="1" max="100" class="small-text" />
+		<p class="description"><?php esc_html_e( 'Number of log lines to keep (1-100). The oldest lines are trimmed beyond this.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -238,7 +330,7 @@ class SettingsController extends Controller {
 		$debug_url_transformation = get_option( 'bunnify_debug_url_transformation', false );
 		?>
 		<input type="checkbox" name="bunnify_debug_url_transformation" value="1" <?php checked( 1, $debug_url_transformation, true ); ?> />
-		<p class="description">Enable logging for URL transformation logic.</p>
+		<p class="description"><?php esc_html_e( 'Enable logging for URL transformation logic.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -249,7 +341,7 @@ class SettingsController extends Controller {
 		$debug_image_processing = get_option( 'bunnify_debug_image_processing', false );
 		?>
 		<input type="checkbox" name="bunnify_debug_image_processing" value="1" <?php checked( 1, $debug_image_processing, true ); ?> />
-		<p class="description">Enable logging for image processing logic.</p>
+		<p class="description"><?php esc_html_e( 'Enable logging for image processing logic.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -260,7 +352,7 @@ class SettingsController extends Controller {
 		$debug_srcset_generation = get_option( 'bunnify_debug_srcset_generation', false );
 		?>
 		<input type="checkbox" name="bunnify_debug_srcset_generation" value="1" <?php checked( 1, $debug_srcset_generation, true ); ?> />
-		<p class="description">Enable logging for srcset generation logic.</p>
+		<p class="description"><?php esc_html_e( 'Enable logging for srcset generation logic.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -271,7 +363,7 @@ class SettingsController extends Controller {
 		$debug_content_filtering = get_option( 'bunnify_debug_content_filtering', false );
 		?>
 		<input type="checkbox" name="bunnify_debug_content_filtering" value="1" <?php checked( 1, $debug_content_filtering, true ); ?> />
-		<p class="description">Enable logging for content filtering logic.</p>
+		<p class="description"><?php esc_html_e( 'Enable logging for content filtering logic.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -282,7 +374,7 @@ class SettingsController extends Controller {
 		$debug_local_dev_mode = get_option( 'bunnify_debug_local_dev_mode', false );
 		?>
 		<input type="checkbox" name="bunnify_debug_local_dev_mode" value="1" <?php checked( 1, $debug_local_dev_mode, true ); ?> />
-		<p class="description">Enable logging specifically for local development mode checks.</p>
+		<p class="description"><?php esc_html_e( 'Enable logging specifically for local development mode checks.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -293,7 +385,7 @@ class SettingsController extends Controller {
 		$debug_performance = get_option( 'bunnify_debug_performance', false );
 		?>
 		<input type="checkbox" name="bunnify_debug_performance" value="1" <?php checked( 1, $debug_performance, true ); ?> />
-		<p class="description">Enable logging for performance tracking.</p>
+		<p class="description"><?php esc_html_e( 'Enable logging for performance tracking.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -343,23 +435,42 @@ class SettingsController extends Controller {
 	 * Local development mode field callback.
 	 */
 	public function local_dev_mode_field_callback() {
-		$local_dev_mode = get_option( 'bunnify_local_dev_mode', false );
-		$environment    = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
-		$auto_on        = 'production' !== $environment;
-		?>
-		<input type="checkbox" name="bunnify_local_dev_mode" value="1" <?php checked( 1, $local_dev_mode, true ); ?> <?php disabled( $auto_on ); ?> />
-		<p class="description">
-			Serve the local file when it exists and fall back to the CDN for missing images
-			(so an install without synced uploads still shows every image).
-			<?php if ( $auto_on ) : ?>
-				<strong>Automatically enabled</strong> because the environment type is
-				<code><?php echo esc_html( $environment ); ?></code> (not <code>production</code>).
-			<?php else : ?>
-				This environment reports as <code>production</code>, so it is off by default;
-				tick to force it on here.
-			<?php endif; ?>
-		</p>
-		<?php
+		$environment = self::current_environment_type();
+		$auto_on     = in_array( $environment, self::LOCAL_DEV_ENVIRONMENTS, true );
+		$stored      = (string) get_option( 'bunnify_local_dev_mode', '' );
+
+		if ( $auto_on ) {
+			// Auto-enabled by the environment. The visible control is disabled
+			// (and so not submitted), so a hidden field preserves any stored
+			// force-on value across saves.
+			?>
+			<input type="hidden" name="bunnify_local_dev_mode" value="<?php echo esc_attr( '' === $stored ? '0' : $stored ); ?>" />
+			<label><input type="checkbox" checked disabled /> <?php esc_html_e( 'Automatically enabled', 'bunnify-frontend' ); ?></label>
+			<p class="description">
+				<?php
+				printf(
+					/* translators: %s: the current environment type (e.g. local). */
+					esc_html__( 'Serve the local file when it exists and fall back to the CDN for missing images. Automatically enabled because the environment type is %s.', 'bunnify-frontend' ),
+					'<code>' . esc_html( $environment ) . '</code>'
+				);
+				?>
+			</p>
+			<?php
+		} else {
+			?>
+			<input type="hidden" name="bunnify_local_dev_mode" value="0" />
+			<input type="checkbox" name="bunnify_local_dev_mode" value="1" <?php checked( '1', $stored ); ?> />
+			<p class="description">
+				<?php
+				printf(
+					/* translators: %s: the current environment type (e.g. staging, production). */
+					esc_html__( 'Serve the local file when it exists and fall back to the CDN for missing images. This environment reports as %s, so it is off by default; tick to force it on here.', 'bunnify-frontend' ),
+					'<code>' . esc_html( $environment ) . '</code>'
+				);
+				?>
+			</p>
+			<?php
+		}
 	}
 
 	/**
@@ -377,77 +488,86 @@ class SettingsController extends Controller {
 
 		settings_errors( 'bunnify_frontend_messages' );
 
-		// Get log file info.
-		$upload_dir   = wp_get_upload_dir();
-		$log_file     = $upload_dir['basedir'] . '/bunnify-debug.log';
-		$log_file_url = $upload_dir['baseurl'] . '/bunnify-debug.log';
-		$log_exists   = file_exists( $log_file );
-		$log_size     = $log_exists ? size_format( filesize( $log_file ) ) : '0 B';
+		// Debug log info (same path DebugTrait writes to).
+		$log_file   = self::get_debug_log_file();
+		$log_exists = $log_file && file_exists( $log_file );
+		$log_size   = $log_exists ? size_format( (int) filesize( $log_file ) ) : '0 B';
 
-		// Count page refreshes in log file.
-		$page_refresh_count = 0;
+		// Count log lines (the retention setting trims by line, not "refreshes").
+		$log_lines = 0;
 		if ( $log_exists ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a local plugin log file, not a remote resource.
 			$content = file_get_contents( $log_file );
 			if ( ! empty( $content ) ) {
-				$refresh_marker = str_repeat( '=', 80 );
-				$sections       = explode( $refresh_marker, $content );
-				foreach ( $sections as $section ) {
-					if ( strpos( $section, 'PAGE REFRESH:' ) !== false ) {
-						++$page_refresh_count;
-					}
-				}
+				$log_lines = count( array_filter( explode( PHP_EOL, $content ) ) );
 			}
 		}
 		?>
 		<div class="wrap">
-			<h1>BunnyCDN Settings</h1>
+			<h1><?php esc_html_e( 'BunnyCDN Settings', 'bunnify-frontend' ); ?></h1>
 			<form action="options.php" method="post">
 				<?php
 				settings_fields( 'bunnify_frontend_options' );
 				do_settings_sections( 'bunnify-frontend' );
-				submit_button( 'Save Settings' );
+				submit_button( __( 'Save Settings', 'bunnify-frontend' ) );
 				?>
 			</form>
 
 			<div class="card" style="width: 100%; max-width: unset;">
-				<h2>Debug Log</h2>
+				<h2><?php esc_html_e( 'Debug Log', 'bunnify-frontend' ); ?></h2>
 				<?php if ( $this->is_debug_enabled() ) : ?>
-					<p><strong>Debug mode is enabled.</strong> Log file: <code><?php echo esc_html( $log_file ); ?></code></p>
-					<p><strong>Important:</strong> To generate debug logs, you must add <code>?bunnify_debug=1</code> to any page URL you want to debug.</p>
-					<p><strong>Example:</strong> <code><?php echo esc_url( home_url() . '/?bunnify_debug=1' ); ?></code></p>
+					<p>
+						<strong><?php esc_html_e( 'Debug mode is enabled.', 'bunnify-frontend' ); ?></strong>
+						<?php
+						printf(
+							/* translators: %s: the debug log file path. */
+							esc_html__( 'Log file: %s', 'bunnify-frontend' ),
+							'<code>' . esc_html( self::get_debug_log_relative_path() ) . '</code>'
+						);
+						?>
+					</p>
+					<p><?php esc_html_e( 'Logging runs automatically for the debug categories enabled above; load a front-end page to generate entries.', 'bunnify-frontend' ); ?></p>
 					<?php if ( $log_exists ) : ?>
-						<p>Log file size: <?php echo esc_html( $log_size ); ?></p>
-						<p>Page refreshes logged: <?php echo esc_html( $page_refresh_count ); ?> (keeping <?php echo esc_html( get_option( 'bunnify_debug_refreshes', 10 ) ); ?> most recent)</p>
-						<p><a href="<?php echo esc_url( $log_file_url ); ?>" target="_blank" class="button">View Debug Log</a></p>
+						<p>
+							<?php
+							printf(
+								/* translators: 1: human-readable file size, 2: number of log lines, 3: retention limit. */
+								esc_html__( 'Log file size: %1$s — %2$d lines (keeping the %3$d most recent).', 'bunnify-frontend' ),
+								esc_html( $log_size ),
+								(int) $log_lines,
+								(int) get_option( 'bunnify_debug_refreshes', 10 )
+							);
+							?>
+						</p>
+						<p class="description"><?php esc_html_e( 'The log is retrieved over SFTP/host file access; it is not linked here so the raw file is not exposed publicly.', 'bunnify-frontend' ); ?></p>
 					<?php else : ?>
-						<p>No log file found yet. Add <code>?bunnify_debug=1</code> to a page URL and refresh to generate logs.</p>
+						<p><?php esc_html_e( 'No log file yet. Load a front-end page with debug categories enabled to generate entries.', 'bunnify-frontend' ); ?></p>
 					<?php endif; ?>
 				<?php else : ?>
-					<p>Debug mode is disabled. Enable it above to start logging image processing.</p>
-					<p><strong>Note:</strong> When enabled, you'll need to add <code>?bunnify_debug=1</code> to page URLs to generate logs.</p>
+					<p><?php esc_html_e( 'Debug mode is disabled. Enable it above to start logging image processing.', 'bunnify-frontend' ); ?></p>
 				<?php endif; ?>
-			</div>
-
-			<div class="card" style="width: 100%; max-width: unset;">
-				<h2>Test BunnyCDN Configuration</h2>
-				<p>Use these functions to test the BunnyCDN functionality:</p>
-				<pre>
-					<code>
-						// Test URL transformation
-						$original_url = 'https://www.example.com/wp-content/uploads/2024/01/test-image.jpg';
-						$plugin = new BunnifyFrontend\CDN();
-						$transformed_url = $plugin->cdn_url($original_url, ['width' => 300, 'height' => 200]);
-						echo "Transformed: " . $transformed_url;
-
-						// Test attachment processing
-						$image_data = wp_get_attachment_image_src(123, 'medium');
-						print_r($image_data); // For testing purposes only
-					</code>
-				</pre>
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Absolute path of the debug log file (same target as DebugTrait).
+	 *
+	 * @return string
+	 */
+	private static function get_debug_log_file(): string {
+		$upload_dir = wp_get_upload_dir();
+		return trailingslashit( $upload_dir['basedir'] ) . self::LOG_SUBPATH;
+	}
+
+	/**
+	 * Human-readable relative path of the debug log, for display.
+	 *
+	 * @return string e.g. wp-content/uploads/bunnify-logs/debug.log
+	 */
+	private static function get_debug_log_relative_path(): string {
+		return 'wp-content/uploads/' . self::LOG_SUBPATH;
 	}
 
 	/**
@@ -457,6 +577,15 @@ class SettingsController extends Controller {
 	 */
 	private function is_debug_enabled() {
 		return (bool) get_option( 'bunnify_debug_enabled', false );
+	}
+
+	/**
+	 * The current WordPress environment type (defaults to production).
+	 *
+	 * @return string
+	 */
+	private static function current_environment_type(): string {
+		return function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
 	}
 
 	/**
@@ -489,18 +618,18 @@ class SettingsController extends Controller {
 	 * back to the CDN" — so an install without synced uploads still shows every
 	 * image (missing ones from the CDN) instead of broken thumbnails.
 	 *
-	 * It is enabled automatically on any non-production environment, using
-	 * WordPress core's {@see wp_get_environment_type()} (set via the
-	 * `WP_ENVIRONMENT_TYPE` constant or environment variable; defaults to
-	 * `production`). No manual toggle is needed on local/staging. Resolution
-	 * order:
+	 * It is enabled automatically on a development-class environment (`local`
+	 * or `development`), using WordPress core's {@see wp_get_environment_type()}
+	 * (set via the `WP_ENVIRONMENT_TYPE` constant or environment variable;
+	 * defaults to `production`). `staging` is deliberately NOT auto-enabled so a
+	 * staging box still exercises the CDN before a production promotion.
+	 * Resolution order:
 	 *
 	 * 1. The `bunnify_local_dev_mode_check` filter — return non-null to force
-	 *    it on or off (highest priority; e.g. to disable on a local box that
-	 *    does have every upload synced).
-	 * 2. Automatic: on when the environment is not `production`.
-	 * 3. The `bunnify_local_dev_mode` option — a manual force-on for a
-	 *    production-typed environment (rare).
+	 *    it on or off (highest priority).
+	 * 2. Automatic: on for a `local`/`development` environment.
+	 * 3. The `bunnify_local_dev_mode` option — a manual force-on for any other
+	 *    environment (e.g. staging, or a production-typed box).
 	 *
 	 * @return bool True if local development mode is enabled.
 	 */
@@ -511,12 +640,12 @@ class SettingsController extends Controller {
 			return (bool) $custom_check;
 		}
 
-		// Automatic: any non-production environment prefers local files.
-		if ( function_exists( 'wp_get_environment_type' ) && 'production' !== wp_get_environment_type() ) {
+		// Automatic: development-class environments prefer local files.
+		if ( in_array( self::current_environment_type(), self::LOCAL_DEV_ENVIRONMENTS, true ) ) {
 			return true;
 		}
 
-		// Manual force-on for a production-typed environment.
+		// Manual force-on for staging / production-typed environments.
 		return (bool) get_option( 'bunnify_local_dev_mode', false );
 	}
 }

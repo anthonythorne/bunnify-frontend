@@ -129,7 +129,7 @@ use BunnifyFrontend\Library\URLTransformer;
  *
  * ## Debug and Logging
  *
- * Comprehensive debug logging is available via `bunnify-debug.log`:
+ * Comprehensive debug logging is available via `uploads/bunnify-logs/debug.log`:
  * - Image processing steps and decisions
  * - URL transformations and CDN generation
  * - Srcset generation and modification

@@ -305,14 +305,22 @@ class URLTransformer {
 	 * @return bool True if the image exists locally, false otherwise.
 	 */
 	public static function image_exists_locally( string $url ): bool {
+		// Per-request cache: local-dev mode calls this for every image (often
+		// several times each — src, srcset, media picker), and each miss does
+		// two filesystem stats. The result cannot change within a request.
+		static $cache = array();
+		if ( array_key_exists( $url, $cache ) ) {
+			return $cache[ $url ];
+		}
+
 		// Parse the URL to get the local file path.
 		$upload_dir  = wp_upload_dir();
-		$upload_url  = $upload_dir['baseurl'];
 		$upload_path = $upload_dir['basedir'];
 
 		// Parse the URL to extract the path.
 		$url_parts = wp_parse_url( $url );
 		if ( ! is_array( $url_parts ) || empty( $url_parts['path'] ) ) {
+			$cache[ $url ] = false;
 			return false;
 		}
 
@@ -321,6 +329,7 @@ class URLTransformer {
 		// Check if the path contains wp-content/uploads (most reliable method).
 		$uploads_pos = strpos( $url_path, '/wp-content/uploads/' );
 		if ( false === $uploads_pos ) {
+			$cache[ $url ] = false;
 			return false;
 		}
 
@@ -330,6 +339,8 @@ class URLTransformer {
 
 		// Check if the file exists and is readable.
 		$file_exists = file_exists( $local_path ) && is_readable( $local_path );
+
+		$cache[ $url ] = $file_exists;
 
 		// Debug logging if enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {

@@ -133,8 +133,9 @@ trait LoggingTrait {
 			if ( $data ) {
 				self::format_items( 'table', $data, [ 'key', 'value' ] );
 			}
-		} else {
-            var_dump( $data ); // phpcs:ignore
+		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// Debug-only, never echoed to the page.
+			error_log( print_r( $data, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_print_r
 		}
 	}
 

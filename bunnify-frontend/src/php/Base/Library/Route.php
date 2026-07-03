@@ -86,7 +86,8 @@ class Route {
 	 * @return boolean Whether to continue processing the request.
 	 */
 	public function handle_routes( $continue, $wp, $extra_query_vars ) {
-		$request_path = trim( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ), '/' ); // phpcs:ignore
+		$request_uri  = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$request_path = trim( (string) wp_parse_url( $request_uri, PHP_URL_PATH ), '/' );
 
 		// Adjust for site subdirectory installations.
 		$site_url_parts = wp_parse_url( get_site_url() );

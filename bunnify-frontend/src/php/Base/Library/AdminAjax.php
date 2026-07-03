@@ -62,6 +62,7 @@ class AdminAjax {
 	 * @return mixed|string The value for the parameter or the default.
 	 */
 	public static function get_param( $param, $default_value = '' ) {
-		return $_REQUEST[ $param ] ?? $default_value; // phpcs:ignore
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only parameter accessor; callers verify the AJAX nonce.
+		return isset( $_REQUEST[ $param ] ) ? sanitize_text_field( wp_unslash( $_REQUEST[ $param ] ) ) : $default_value;
 	}
 }

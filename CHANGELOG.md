@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- WordPress.org submission-readiness pass: all user-facing admin strings are
+  internationalised with the `bunnify-frontend` text domain; every setting now
+  registers a `sanitize_callback` (hostname reduced to a bare host, log
+  retention clamped to 1–100, checkboxes normalised to `'1'`/`'0'`); the debug
+  log directory is hardened with an `index.php` and a `Require all denied`
+  `.htaccess` so it is not browsable.
 - Repository restructure: the installable plugin now lives in the
   `bunnify-frontend/` subdirectory; the repo root holds docs and tooling.
 - Development toolchain: PHPCS (WordPress Coding Standards), PHPStan (level 5 +
@@ -33,15 +39,33 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `bunnify_admin_allow_attachment_for_js`.
 
 ### Changed
-- Local-development mode is now automatic. It enables on any non-`production`
-  environment via WordPress core's `wp_get_environment_type()` (no manual
-  toggle needed on local/staging), and now also covers admin picker/preview
-  surfaces (the media library and featured-image previews). The mode's
-  per-image rule ("serve the local file if present, else the CDN") applies
-  everywhere. Resolution order: the `bunnify_local_dev_mode_check` filter
-  (force on/off) → automatic non-production detection → the
-  `bunnify_local_dev_mode` option (a manual force-on for a production-typed
-  box). Production behaviour is unchanged.
+- Local-development mode is now automatic. It enables on a development-class
+  environment (`local` or `development`) via WordPress core's
+  `wp_get_environment_type()` (no manual toggle needed), and now also covers
+  admin picker/preview surfaces (the media library and featured-image
+  previews). The mode's per-image rule ("serve the local file if present, else
+  the CDN") applies everywhere. `staging` is deliberately **not** auto-enabled
+  so a staging box still exercises the CDN before a production promotion.
+  Resolution order: the `bunnify_local_dev_mode_check` filter (force on/off) →
+  automatic `local`/`development` detection → the `bunnify_local_dev_mode`
+  option (a manual force-on for staging / production-typed boxes). Production
+  behaviour is unchanged.
+- `image_exists_locally()` now caches its result per request (local-dev mode
+  called it — and its two filesystem stats — for every image, often several
+  times each).
+
+### Fixed
+- The debug log path was inconsistent: the writer used
+  `uploads/bunnify-logs/debug.log` while the admin screen, field help, and
+  `uninstall.php` referenced `uploads/bunnify-debug.log`. They now agree, so
+  the admin panel reflects the real log and uninstall removes the whole
+  `bunnify-logs/` directory. The admin panel no longer links the raw log URL
+  publicly, and the removed-but-never-implemented `?bunnify_debug=1` / "page
+  refresh" instructions are gone (logging runs automatically for enabled
+  categories; retention is by log line).
+- Replaced a `var_dump()` fallback in the logging trait with a `WP_DEBUG`-gated
+  `error_log()`, and added `wp_unslash()`/sanitisation to the framework's
+  request/`$_SERVER` reads.
 - Resource hints moved from `dns-prefetch` to a dedicated
   `WPResourceHintsController` that adds a `preconnect` (skipping same-origin)
   and strips the redundant `dns-prefetch` for the CDN hostname.
