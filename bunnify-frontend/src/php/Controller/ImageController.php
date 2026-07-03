@@ -179,6 +179,27 @@ class ImageController extends Controller {
 	}
 
 	/**
+	 * Whether the admin guard should block processing for the current request.
+	 *
+	 * Admin surfaces (the media library, editor previews) normally keep origin
+	 * URLs. Local-dev mode is the deliberate exception: it means "serve local
+	 * files when present, else fall back to the CDN", and the per-image
+	 * {@see URLTransformer::image_exists_locally()} check downstream applies
+	 * that just as usefully in admin — a local install without synced uploads
+	 * otherwise shows blank media-library thumbnails (the origin files 404).
+	 * So in local-dev mode we do not block admin wholesale; the exists-locally
+	 * check decides per image.
+	 *
+	 * Kept separate from the `bunnify_admin_allow_*` filter so callers can still
+	 * short-circuit that filter (it must only fire in admin context).
+	 *
+	 * @return bool True when the request is in admin and local-dev mode is off.
+	 */
+	private function is_admin_without_local_dev(): bool {
+		return is_admin() && ! \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled();
+	}
+
+	/**
 	 * Filter image downsize to process custom sizes and transform to CDN.
 	 *
 	 * This filter processes image size requests and transforms URLs to CDN
@@ -193,8 +214,9 @@ class ImageController extends Controller {
 		// Debug logging for image downsize processing.
 		$this->debug_log( "filter_image_downsize called with attachment_id: {$attachment_id}, size: " . ( is_array( $size ) ? '[' . implode( ',', $size ) . ']' : $size ), 'filter_image_downsize' );
 
-		// Don't process in admin unless specifically allowed.
-		if ( is_admin() && false === apply_filters( 'bunnify_admin_allow_image_downsize', false, compact( 'image', 'attachment_id', 'size' ) ) ) {
+		// Don't process in admin unless specifically allowed (or in local-dev
+		// mode, where the exists-locally check below decides per image).
+		if ( $this->is_admin_without_local_dev() && false === apply_filters( 'bunnify_admin_allow_image_downsize', false, compact( 'image', 'attachment_id', 'size' ) ) ) {
 			return $image;
 		}
 
@@ -324,8 +346,9 @@ class ImageController extends Controller {
 	 * @return array|false Modified image data or false.
 	 */
 	public function filter_attachment_img_srcs( array|false $image, int $attachment_id, string|array $size, bool $icon ): array|false {
-		// Don't process in admin unless specifically allowed.
-		if ( is_admin() && false === apply_filters( 'bunnify_admin_allow_attachment_srcs', false, compact( 'image', 'attachment_id', 'size', 'icon' ) ) ) {
+		// Don't process in admin unless specifically allowed (or in local-dev
+		// mode, where the exists-locally check below decides per image).
+		if ( $this->is_admin_without_local_dev() && false === apply_filters( 'bunnify_admin_allow_attachment_srcs', false, compact( 'image', 'attachment_id', 'size', 'icon' ) ) ) {
 			return $image;
 		}
 

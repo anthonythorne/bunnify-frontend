@@ -9,6 +9,7 @@ declare( strict_types=1 );
 
 namespace BunnifyFrontend\Tests\Unit;
 
+use Brain\Monkey\Functions;
 use BunnifyFrontend\Controller\ImageController;
 use ReflectionMethod;
 
@@ -88,5 +89,42 @@ final class ImageControllerTest extends TestCase {
 			array( 'width' => false, 'height' => false ),
 			$this->invoke( 'resolve_size_dimensions', array( 'full', $sizes ) )
 		);
+	}
+
+	/**
+	 * Stub is_admin() and the local-dev mode option in one call.
+	 *
+	 * @param bool $is_admin  Whether the request is in admin context.
+	 * @param bool $local_dev Whether local-dev mode is enabled.
+	 */
+	private function stub_context( bool $is_admin, bool $local_dev ): void {
+		Functions\when( 'is_admin' )->justReturn( $is_admin );
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default = false ) use ( $local_dev ) {
+				return 'bunnify_local_dev_mode' === $name ? $local_dev : $default;
+			}
+		);
+	}
+
+	public function test_admin_guard_blocks_in_admin_without_local_dev(): void {
+		$this->stub_context( true, false );
+
+		$this->assertTrue( $this->invoke( 'is_admin_without_local_dev', array() ) );
+	}
+
+	public function test_admin_guard_defers_in_admin_with_local_dev(): void {
+		// Local-dev mode means the media library / editor should resolve
+		// missing local uploads from the CDN, so the wholesale admin skip
+		// stands down and the per-image exists-locally check takes over.
+		$this->stub_context( true, true );
+
+		$this->assertFalse( $this->invoke( 'is_admin_without_local_dev', array() ) );
+	}
+
+	public function test_admin_guard_never_blocks_on_front_end(): void {
+		$this->stub_context( false, false );
+
+		$this->assertFalse( $this->invoke( 'is_admin_without_local_dev', array() ) );
 	}
 }

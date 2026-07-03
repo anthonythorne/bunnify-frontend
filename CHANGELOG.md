@@ -22,6 +22,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Project wiki under `docs/` and a `docs/blueprints/` roadmap.
 
 ### Changed
+- Local-development mode now also covers admin surfaces (the media library and
+  editor image previews). Previously the admin guard skipped rewriting
+  wholesale, so a local install without synced uploads showed blank media-
+  library thumbnails; in local-dev mode the per-image "serve the local file if
+  present, else the CDN" check now applies in admin too. No effect when
+  local-dev mode is off (production behaviour unchanged).
 - Resource hints moved from `dns-prefetch` to a dedicated
   `WPResourceHintsController` that adds a `preconnect` (skipping same-origin)
   and strips the redundant `dns-prefetch` for the CDN hostname.
