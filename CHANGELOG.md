@@ -22,12 +22,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Project wiki under `docs/` and a `docs/blueprints/` roadmap.
 
 ### Changed
-- Local-development mode now also covers admin surfaces (the media library and
-  editor image previews). Previously the admin guard skipped rewriting
-  wholesale, so a local install without synced uploads showed blank media-
-  library thumbnails; in local-dev mode the per-image "serve the local file if
-  present, else the CDN" check now applies in admin too. No effect when
-  local-dev mode is off (production behaviour unchanged).
+- Local-development mode is now automatic. It enables on any non-`production`
+  environment via WordPress core's `wp_get_environment_type()` (no manual
+  toggle needed on local/staging), and it now covers admin surfaces too — the
+  media library and editor previews previously skipped rewriting wholesale, so
+  an install without synced uploads showed blank thumbnails. The mode's
+  per-image rule ("serve the local file if present, else the CDN") now applies
+  everywhere. Resolution order: the `bunnify_local_dev_mode_check` filter
+  (force on/off) → automatic non-production detection → the
+  `bunnify_local_dev_mode` option (a manual force-on for a production-typed
+  box). Production behaviour is unchanged.
 - Resource hints moved from `dns-prefetch` to a dedicated
   `WPResourceHintsController` that adds a `preconnect` (skipping same-origin)
   and strips the redundant `dns-prefetch` for the CDN hostname.

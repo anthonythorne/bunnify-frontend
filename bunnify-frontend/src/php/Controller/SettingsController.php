@@ -344,9 +344,21 @@ class SettingsController extends Controller {
 	 */
 	public function local_dev_mode_field_callback() {
 		$local_dev_mode = get_option( 'bunnify_local_dev_mode', false );
+		$environment    = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
+		$auto_on        = 'production' !== $environment;
 		?>
-		<input type="checkbox" name="bunnify_local_dev_mode" value="1" <?php checked( 1, $local_dev_mode, true ); ?> />
-		<p class="description">When enabled, checks if images exist locally before applying CDN transformation. Useful for local development where images may not be available on the CDN.</p>
+		<input type="checkbox" name="bunnify_local_dev_mode" value="1" <?php checked( 1, $local_dev_mode, true ); ?> <?php disabled( $auto_on ); ?> />
+		<p class="description">
+			Serve the local file when it exists and fall back to the CDN for missing images
+			(so an install without synced uploads still shows every image).
+			<?php if ( $auto_on ) : ?>
+				<strong>Automatically enabled</strong> because the environment type is
+				<code><?php echo esc_html( $environment ); ?></code> (not <code>production</code>).
+			<?php else : ?>
+				This environment reports as <code>production</code>, so it is off by default;
+				tick to force it on here.
+			<?php endif; ?>
+		</p>
 		<?php
 	}
 
@@ -473,15 +485,38 @@ class SettingsController extends Controller {
 	/**
 	 * Check if local development mode is enabled.
 	 *
+	 * Local-dev mode means "serve the local file when it exists, otherwise fall
+	 * back to the CDN" — so an install without synced uploads still shows every
+	 * image (missing ones from the CDN) instead of broken thumbnails.
+	 *
+	 * It is enabled automatically on any non-production environment, using
+	 * WordPress core's {@see wp_get_environment_type()} (set via the
+	 * `WP_ENVIRONMENT_TYPE` constant or environment variable; defaults to
+	 * `production`). No manual toggle is needed on local/staging. Resolution
+	 * order:
+	 *
+	 * 1. The `bunnify_local_dev_mode_check` filter — return non-null to force
+	 *    it on or off (highest priority; e.g. to disable on a local box that
+	 *    does have every upload synced).
+	 * 2. Automatic: on when the environment is not `production`.
+	 * 3. The `bunnify_local_dev_mode` option — a manual force-on for a
+	 *    production-typed environment (rare).
+	 *
 	 * @return bool True if local development mode is enabled.
 	 */
-	public static function is_local_dev_mode_enabled() {
-		// Allow custom filter to override the setting.
+	public static function is_local_dev_mode_enabled(): bool {
+		// Explicit override wins (non-null return forces on or off).
 		$custom_check = apply_filters( 'bunnify_local_dev_mode_check', null );
 		if ( null !== $custom_check ) {
 			return (bool) $custom_check;
 		}
 
+		// Automatic: any non-production environment prefers local files.
+		if ( function_exists( 'wp_get_environment_type' ) && 'production' !== wp_get_environment_type() ) {
+			return true;
+		}
+
+		// Manual force-on for a production-typed environment.
 		return (bool) get_option( 'bunnify_local_dev_mode', false );
 	}
 }

@@ -63,4 +63,63 @@ final class SettingsControllerTest extends TestCase {
 
 		$this->assertFalse( SettingsController::is_enabled() );
 	}
+
+	/**
+	 * Set up the local-dev-mode inputs: the override filter, the environment
+	 * type, and the manual option.
+	 *
+	 * @param mixed  $filter      Value the bunnify_local_dev_mode_check filter returns.
+	 * @param string $environment wp_get_environment_type() result.
+	 * @param mixed  $option      Stored bunnify_local_dev_mode value.
+	 */
+	private function stub_local_dev( $filter, string $environment, $option ): void {
+		Functions\when( 'apply_filters' )->alias(
+			static function ( string $hook, $value = null ) use ( $filter ) {
+				return 'bunnify_local_dev_mode_check' === $hook ? $filter : $value;
+			}
+		);
+		Functions\when( 'wp_get_environment_type' )->justReturn( $environment );
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default = false ) use ( $option ) {
+				return 'bunnify_local_dev_mode' === $name ? $option : $default;
+			}
+		);
+	}
+
+	public function test_local_dev_auto_on_for_non_production(): void {
+		// No filter, no option — enabled purely by the environment type.
+		foreach ( array( 'local', 'staging', 'development' ) as $environment ) {
+			$this->stub_local_dev( null, $environment, false );
+
+			$this->assertTrue(
+				SettingsController::is_local_dev_mode_enabled(),
+				"local-dev should auto-enable on '{$environment}'"
+			);
+		}
+	}
+
+	public function test_local_dev_off_on_production_by_default(): void {
+		$this->stub_local_dev( null, 'production', false );
+
+		$this->assertFalse( SettingsController::is_local_dev_mode_enabled() );
+	}
+
+	public function test_local_dev_option_forces_on_in_production(): void {
+		$this->stub_local_dev( null, 'production', '1' );
+
+		$this->assertTrue( SettingsController::is_local_dev_mode_enabled() );
+	}
+
+	public function test_local_dev_filter_overrides_auto_on(): void {
+		// A local box with every upload synced can force local-dev off.
+		$this->stub_local_dev( false, 'local', false );
+
+		$this->assertFalse( SettingsController::is_local_dev_mode_enabled() );
+	}
+
+	public function test_local_dev_filter_forces_on_in_production(): void {
+		$this->stub_local_dev( true, 'production', false );
+
+		$this->assertTrue( SettingsController::is_local_dev_mode_enabled() );
+	}
 }
