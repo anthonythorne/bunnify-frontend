@@ -15,7 +15,7 @@ that into a single, lazily-resolved **CDN service** (hostname resolution + a mem
 `URLTransformer`) that is injected into controllers through the framework's existing
 trait-driven service-injection mechanism (`Application::set_services_for_controller`), replacing
 the `URLTransformer::$static_instance` singleton. The public `bunnify_url` filter API and every
-`bunnify_*` hook stay byte-for-byte compatible, so the caretochange consumer is unaffected.
+`bunnify_*` hook stay byte-for-byte compatible, so a downstream consumer is unaffected.
 
 ## Motivation / Problem
 
@@ -119,12 +119,11 @@ Today's CDN wiring bypasses all of this: `CDNController` and `ContentController`
 keeps its own static singleton for the `get_cdn_url_by_id()` / `is_cdn_url()` static entry points
 that `CDNController`, `ContentController`, and `ImageController` all call.
 
-The **consumer coupling is only through filters.** In caretochange, every integration point goes
-through `apply_filters( 'bunnify_url', ... )` (e.g.
-`caretochange-core/src/php/Function/Image.php:39`, `Library/ImageRenderer.php:168`,
-`Library/VideoPoster.php:189`, `Controller/ImagePreloaderController.php:46`) plus the
-`bunnify_allow_non_upload_url` and `bunnify_skip_image` filters added in
-`PluginBunnifyExtController`. The consumer never does `new URLTransformer` and never calls the
+The **consumer coupling is only through filters.** A consumer integrates every point
+through `apply_filters( 'bunnify_url', ... )` (e.g. a consumer's image renderer and video-poster
+helpers, image function, and preloader controller) plus the
+`bunnify_allow_non_upload_url` and `bunnify_skip_image` filters added in the consumer's integration
+controller. The consumer never does `new URLTransformer` and never calls the
 static methods directly — which makes this refactor safe to do behind the filter seam.
 
 ## Proposed approach
@@ -205,7 +204,7 @@ container only if cross-plugin `Base` churn must be avoided this cycle.
   `bunnify_allow_non_upload_url`, `bunnify_any_extension_for_domain`, and `bunnify_skip_image`
   keep identical names, arguments, priorities, and firing order. The service refactor happens
   strictly *behind* `CDNController::cdn_url` (still hooked at `bunnify_url`, priority 10).
-- **caretochange is unaffected.** Its only touchpoints are those filters (see Current state); it
+- **A consumer site is unaffected.** Its only touchpoints are those filters (see Current state); it
   never instantiates `URLTransformer` or calls its statics, so no consumer code changes are
   required. This is the primary safety guarantee of the design.
 - **Deprecation shim for the statics.** `URLTransformer::get_cdn_url_by_id()` and

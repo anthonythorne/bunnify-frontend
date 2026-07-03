@@ -17,7 +17,7 @@ The `src/php/Base` mini-MVC framework is the load-bearing spine of the plugin �
 application, wires controllers, and merges config — yet it is the one area we deliberately do not
 hold to our own quality bar. It is excluded from PHPCS, has no `declare(strict_types=1)`, and uses
 docblock-only typing on its properties and constructors. Worse, it is not unique to this plugin: a
-byte-for-byte-equivalent copy lives in the `caretochange` consumer repo under a different namespace
+byte-for-byte-equivalent copy lives in a downstream consumer's repo under a different namespace
 root, so every fix has to be applied twice by hand. This blueprint proposes two mutually exclusive
 end-states — **(a)** promote `Base` in-place to WPCS + PHPStan level 5 and fold it into linting, or
 **(b)** extract it into a single versioned Composer package consumed by all of the author's plugins
@@ -46,10 +46,10 @@ source we author, copied between plugins.
   `class_uses( $controller )`, which is **not recursive**: a controller that pulls in `RESTTrait`
   via an intermediate trait (rather than directly) would silently not receive its `REST` service.
   Excluding `Base` from static analysis is exactly how this class of bug stays invisible.
-- **It is duplicated across plugins.** The same framework ships in the `caretochange` repo at
-  `wp-content/mu-plugins/caretochange/caretochange-core/src/php/Base` (34 files vs. our 33) under the
-  namespace root `CareToChange\Core\Base` instead of `BunnifyFrontend\Base`. A third variant appears
-  as `DataLayer\Base`. The provenance is documented in `src/php/Base/README.md:1-5`: these files are
+- **It is duplicated across plugins.** The same framework ships in a downstream consumer under a
+  sibling plugin's namespace root (its own `Core\Base` instead of `BunnifyFrontend\Base`), with a
+  comparable file count (34 files vs. our 33). A third variant appears in yet another sibling
+  plugin's namespace. The provenance is documented in `src/php/Base/README.md:1-5`: these files are
   "derived from The Code Companies WPMVC mu-plugin." Today, keeping the copies in sync is a manual,
   error-prone diff-and-rename exercise with no version, no changelog, and no shared test suite.
 
@@ -65,7 +65,7 @@ The net effect: our least-tested, least-linted code is our most-shared, most-cri
   on and types are added).
 - The `class_uses()` trait-detection gap at `Application.php:125` is fixed and covered by a test.
 - A single, documented mechanism exists to propagate a `Base` change to every consuming plugin
-  (`bunnify-frontend`, `caretochange`, and future ones) — either "one source of truth to copy from"
+  (`bunnify-frontend`, downstream consumers, and future ones) — either "one source of truth to copy from"
   (path a) or "one Composer package to `composer update`" (path b).
 - No change to the public WordPress filter API (`base_pre_controller_set_instances`,
   `base_post_controller_set_instances`, `base_pre_controller_set_up`, `base_post_controller_set_up`)
@@ -162,7 +162,7 @@ Keep `Base` as source inside each plugin, but hold it to the same bar as the res
 
 4. **Keep copies in sync with a scripted vendor-sync, not hand edits.** Designate one repo as the
    canonical `Base` source and add a `bin/sync-base.sh` that copies files into each consumer and
-   rewrites the namespace root (`BunnifyFrontend\Base` ↔ `CareToChange\Core\Base`) via a documented
+   rewrites the namespace root (`BunnifyFrontend\Base` ↔ a consumer's own `Core\Base`) via a documented
    sed/AST pass, with a CI check that fails if a consumer's `Base` has drifted from canonical. This
    is cheap and needs no autoloader changes, but it is still copy-on-write.
 
@@ -181,7 +181,7 @@ on it and drop their in-tree `Base`.
 ```
 
 The hard problem is **namespaces and multi-plugin coexistence**. Today each plugin re-namespaces its
-copy (`BunnifyFrontend\Base`, `CareToChange\Core\Base`) precisely so two active plugins on one site
+copy (`BunnifyFrontend\Base`, a consumer's own `Core\Base`) precisely so two active plugins on one site
 never collide and each loads its own copy through its own `build-tools/vendor/autoload.php`. A shared
 package has one fixed namespace (say `TheCodeCompany\WPBase`). Two options:
 
@@ -204,7 +204,7 @@ biggest migration cost and the coexistence question above must be answered befor
 Do **Path A first** — it is the enabling work either way (you cannot cleanly extract untyped,
 unlinted code) and it delivers value immediately. Then, once `Base` is green and covered by tests,
 evaluate **Path B (with B2/PHP-Scoper)** as a fast-follow, because the duplication across
-`bunnify-frontend`, `caretochange`, and `DataLayer` is the real cost and only extraction removes it.
+`bunnify-frontend` and its sibling plugins is the real cost and only extraction removes it.
 
 ## Migration & backwards compatibility
 - **Public filter API is frozen.** The four `base_*` filter names and their argument shapes in
@@ -214,12 +214,13 @@ evaluate **Path B (with B2/PHP-Scoper)** as a fast-follow, because the duplicati
   what callers already pass. `set_config_instance(Config $config)` is already typed; new types on
   `Application::__construct` merely codify the existing contract (`string, string, array`). Any
   consumer calling with wrong types was already relying on undefined behaviour.
-- **`caretochange` impact.** Because that repo carries its own re-namespaced copy, Path A changes
-  reach it only through the sync script — it can adopt on its own schedule; nothing breaks until it
-  syncs. Path B is the disruptive one: `caretochange` (an mu-plugin) and `DataLayer` would each need
-  to add the Composer dependency and delete their in-tree `Base`, which is why B is gated behind A
-  and behind resolving B1-vs-B2. Recommend piloting extraction in `bunnify-frontend` (a normal
-  plugin with a clean `build-tools/vendor`) before touching the mu-plugin consumers.
+- **Downstream consumer impact.** Because a consumer carries its own re-namespaced copy, Path A
+  changes reach it only through the sync script — it can adopt on its own schedule; nothing breaks
+  until it syncs. Path B is the disruptive one: a consumer shipped as an mu-plugin and its sibling
+  plugins would each need to add the Composer dependency and delete their in-tree `Base`, which is
+  why B is gated behind A and behind resolving B1-vs-B2. Recommend piloting extraction in
+  `bunnify-frontend` (a normal plugin with a clean `build-tools/vendor`) before touching the
+  mu-plugin consumers.
 - **`strict_types` behavioural risk.** Enabling strict typing can turn previously-coerced scalars
   (e.g. an int passed where a string is hinted) into `TypeError`s. This is a real, if small,
   behaviour change and is why typing lands behind tests (below) and rolls out file-by-file.
@@ -263,7 +264,7 @@ evaluate **Path B (with B2/PHP-Scoper)** as a fast-follow, because the duplicati
 4. **Turn on linting (S).** Add `src/php/Base` to `phpcs.xml.dist`, run `lint:fix`, resolve the tail,
    remove the "excluded for now" comment.
 5. **Sync guard (S).** Add `bin/sync-base.sh` + the CI drift check; propagate the standardised `Base`
-   to `caretochange`/`DataLayer` once, establishing a clean shared baseline. *(End state for Path A.)*
+   to the sibling-plugin consumers once, establishing a clean shared baseline. *(End state for Path A.)*
 6. **Extraction spike (L, optional).** Stand up `thecodecompany/wp-base`, move the now-clean files,
    pick B1 vs B2 (recommend B2/PHP-Scoper), migrate `bunnify-frontend` as the pilot consumer, then
    the mu-plugin consumers. *(End state for Path B.)*

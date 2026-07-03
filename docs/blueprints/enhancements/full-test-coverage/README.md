@@ -34,7 +34,7 @@ The riskiest code in this plugin is exactly the code no unit test can reach, bec
 
 Two structural facts make the gap worse:
 
-1. **The public filter API is a consumer contract.** The caretochange site hooks `bunnify_allow_non_upload_url` and `bunnify_skip_image` from its own plugin. Every `apply_filters()`/`do_action()` in the hot path (`bunnify_skip_for_url`, `bunnify_pre_image_url`, `bunnify_pre_args`, `bunnify_post_image_url`, `bunnify_override_image_downsize`, `bunnify_replace_attachment_srcs`, `bunnify_processing_attachment_image`, …) is a promise. Nothing currently asserts those hooks fire, fire once, with the documented arguments, and are honoured.
+1. **The public filter API is a consumer contract.** A consumer site hooks `bunnify_allow_non_upload_url` and `bunnify_skip_image` from its own plugin. Every `apply_filters()`/`do_action()` in the hot path (`bunnify_skip_for_url`, `bunnify_pre_image_url`, `bunnify_pre_args`, `bunnify_post_image_url`, `bunnify_override_image_downsize`, `bunnify_replace_attachment_srcs`, `bunnify_processing_attachment_image`, …) is a promise. Nothing currently asserts those hooks fire, fire once, with the documented arguments, and are honoured.
 2. **The CDN-init path is duplicated.** `get_option( 'bunnify_hostname' )` + a private `init_cdn()`/`init_static_cdn()` appears in `ContentController` (`.../ContentController.php:68`-`82`), `CDNController` (`.../CDNController.php:52`-`66`), and `URLTransformer` (`.../URLTransformer.php:439`-`453`), plus ad-hoc reads in `WPResourceHintsController` and `URLTransformer::is_cdn_url()` (`.../URLTransformer.php:394`). Each copy is an independently reachable "configured vs disabled" branch, so the test matrix is larger than it needs to be until [[cdn-config-consolidation]] lands.
 
 Today there is no `phpunit.xml.dist` and no `tests/` directory on disk. `composer.json` already requires `phpunit/phpunit ^9.6`, `brain/monkey ^2.6` and `yoast/phpunit-polyfills ^2.0`, reserves the `BunnifyFrontend\Tests\` → `tests/` PSR-4 map, and wires a `test` → `phpunit` script — but none of it runs against anything. Step one is therefore to make the declared tooling real, then expand it.
@@ -156,7 +156,7 @@ The high-value integration scenarios:
 
 ### Filter-contract tests
 
-A dedicated `FilterContractTest` pins the consumer promise the caretochange site relies on. Using Brain Monkey `expectApplied()`/`expectDone()` (unit) and real hook probes (integration):
+A dedicated `FilterContractTest` pins the consumer promise a downstream consumer relies on. Using Brain Monkey `expectApplied()`/`expectDone()` (unit) and real hook probes (integration):
 
 ```php
 // short-circuit is honoured
@@ -216,7 +216,7 @@ strategy:
 ## Migration & backwards compatibility
 
 - **No runtime behaviour changes.** This blueprint adds `tests/`, two PHPUnit configs, dev-only Composer packages (`wp-phpunit/wp-phpunit`, a coverage driver), and CI. Nothing ships in the `.zip` — `.distignore` already excludes dev artefacts, and tests live outside the `bunnify-frontend/` plugin dir.
-- **Public filter API is frozen by these tests, deliberately.** The caretochange consumer hooks `bunnify_allow_non_upload_url` and `bunnify_skip_image` (the latter is referenced downstream even though the plugin currently emits `bunnify_skip_for_url` — a naming mismatch the contract tests will surface and [[cdn-config-consolidation]]/the hooks audit should reconcile). Once `FilterContractTest` exists, any future hook rename, arity change, or default-value change must update the contract test in the same PR — turning silent breakage of downstream sites into a red build.
+- **Public filter API is frozen by these tests, deliberately.** A downstream consumer hooks `bunnify_allow_non_upload_url` and `bunnify_skip_image` (the latter is referenced downstream even though the plugin currently emits `bunnify_skip_for_url` — a naming mismatch the contract tests will surface and [[cdn-config-consolidation]]/the hooks audit should reconcile). Once `FilterContractTest` exists, any future hook rename, arity change, or default-value change must update the contract test in the same PR — turning silent breakage of downstream sites into a red build.
 - **Interaction with consolidation work.** If [[cdn-config-consolidation]] lands first, the disabled-path and init-branch tests collapse from three near-identical cases to one; writing the integration tests against *behaviour* (URLs/markup) rather than internal `init_cdn()` calls keeps them valid across that refactor.
 - **Base exclusion respected.** Coverage and suites ignore `src/php/Base`, so this does not pre-empt [[base-framework-standards]]; if that blueprint later brings Base under test, it can add its own suite without colliding with this scope.
 

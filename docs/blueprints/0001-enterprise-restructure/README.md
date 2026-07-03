@@ -15,7 +15,7 @@ documentation wiki with this blueprint system.
 
 ## Motivation
 
-The plugin is used in production (Care to Change) and is public, but the repo was
+The plugin is used in production by a consuming site and is public, but the repo was
 a flat plugin directory with no tests, no CI, no coding-standards enforcement, no
 distribution tooling, and a `Description` header that did not match the code. To
 treat it as a real open-source product it needs the scaffolding that lets other
@@ -114,12 +114,12 @@ URLs exactly as before.
 now lives in `bunnify-frontend/` rather than at the repo root. Anything that
 consumes this repository must be updated to point at the subdirectory:
 
-- **Care to Change consumer repo** (`caretochange/wp-content/plugins/bunnify-frontend/`):
+- **Downstream consumer repo** (a consuming site's `wp-content/plugins/bunnify-frontend/`):
   the copy currently mirrors the repo root. However this repo is synced into
   `wp-content/plugins/bunnify-frontend/`, that sync must now take its source from
-  this repo's `bunnify-frontend/` subdirectory. The site's integration is via the
+  this repo's `bunnify-frontend/` subdirectory. The consumer's integration is via the
   public `bunnify_*` filters (e.g. the `bunnify_allow_non_upload_url` hook in its
-  `PluginBunnifyExtController`), none of which changed, so no site code needs
+  integration controller), none of which changed, so no consumer code needs
   updating — only the file-copy source path.
 - **WordPress.org deploy**: `deploy.yml` already accounts for the subdirectory
   via `BUILD_DIR: ./bunnify-frontend`.

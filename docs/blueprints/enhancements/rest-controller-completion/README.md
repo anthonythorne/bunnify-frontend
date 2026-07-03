@@ -38,7 +38,7 @@
 
 ## Summary
 
-`RESTController` ships three registered WordPress filter callbacks that do nothing: each validates its input, then returns it unchanged behind a "For now" comment, wrapped in a `try/catch` that can never fire. It adds three hooks to every REST request, imports a `URLTransformer` it never constructs, and carries private `$url_transformer` / `$bunnify_hostname` fields that are never assigned. This blueprint forces a decision: **(a)** implement genuine REST-context CDN rewriting with a real use case, or **(b)** delete the controller and its registration. We recommend **(b) — remove it** — because the plugin is explicitly frontend-only, the sole in-house consumer (caretochange) never touches these hooks, and the one plausible use case for (a) is arguably undesirable.
+`RESTController` ships three registered WordPress filter callbacks that do nothing: each validates its input, then returns it unchanged behind a "For now" comment, wrapped in a `try/catch` that can never fire. It adds three hooks to every REST request, imports a `URLTransformer` it never constructs, and carries private `$url_transformer` / `$bunnify_hostname` fields that are never assigned. This blueprint forces a decision: **(a)** implement genuine REST-context CDN rewriting with a real use case, or **(b)** delete the controller and its registration. We recommend **(b) — remove it** — because the plugin is explicitly frontend-only, the sole known consumer never touches these hooks, and the one plausible use case for (a) is arguably undesirable.
 
 ## Motivation / Problem
 
@@ -86,7 +86,7 @@ The naming implies an intended design in which a `before_callbacks` filter would
 
 The only model the controller references, `Attachment` (`src/php/Model/PostType/Attachment.php`), is a thin read-only wrapper over core functions — `get_attachment_url()` (`:40-45`), `get_metadata()` (`:52-57`), `is_image()` (`:64-66`), `get_dimensions()` (`:104-118`). It is fully usable but currently unused by this controller.
 
-Consumer reality: the caretochange mu-plugin integrates with Bunnify **only** through the `bunnify_url` filter — e.g. `apply_filters( 'bunnify_url', $img[0], $cdn_args )` in `caretochange-core/src/php/Library/ImageRenderer.php:168` — plus the standard frontend `image_downsize`/`srcset` path. A repo-wide grep of caretochange for the REST callbacks (`should_rest_bunnify_*`, `rest_request_before_callbacks` with Bunnify context) returns nothing outside a database dump. **No consumer depends on this controller.**
+Consumer reality: a downstream consumer's image renderer integrates with Bunnify **only** through the `bunnify_url` filter — e.g. `apply_filters( 'bunnify_url', $img[0], $cdn_args )` — plus the standard frontend `image_downsize`/`srcset` path. A repo-wide grep of the consumer for the REST callbacks (`should_rest_bunnify_*`, `rest_request_before_callbacks` with Bunnify context) returns nothing outside a database dump. **No consumer depends on this controller.**
 
 ## Proposed approach
 
@@ -140,8 +140,8 @@ Why we still prefer (b) over (a): rewriting editor previews to a resized CDN URL
 
 ## Migration & backwards compatibility
 
-- **Public filter API:** unchanged under both options. `bunnify_url`, `bunnify_pre_image_url`, `bunnify_pre_args`, `bunnify_skip_for_url`, `bunnify_replace_attachment_srcs`, and the `image_downsize`/`srcset` path all live in other controllers and are untouched. This matters because the caretochange consumer's `ImageRenderer` (`caretochange-core/src/php/Library/ImageRenderer.php:168`) depends on `bunnify_url` and nothing else Bunnify-specific.
-- **caretochange impact:** none. The consumer never references the REST callbacks; removing them changes no observable behavior for it. Its `/wp/v2/media` responses already return origin URLs today (the callbacks are no-ops), so removal is behavior-preserving.
+- **Public filter API:** unchanged under both options. `bunnify_url`, `bunnify_pre_image_url`, `bunnify_pre_args`, `bunnify_skip_for_url`, `bunnify_replace_attachment_srcs`, and the `image_downsize`/`srcset` path all live in other controllers and are untouched. This matters because the downstream consumer's image renderer depends on `bunnify_url` and nothing else Bunnify-specific.
+- **Consumer impact:** none. The consumer never references the REST callbacks; removing them changes no observable behavior for it. Its `/wp/v2/media` responses already return origin URLs today (the callbacks are no-ops), so removal is behavior-preserving.
 - **Third-party stability:** the `should_rest_bunnify_*` method names and the three hook attachments were never functional, so no external integrator could reasonably have depended on their effects. To be safe, the removal note in `docs/` should record that these hooks were withdrawn as no-ops. No deprecation shim is warranted for code that never did anything.
 - If (a) is later chosen, it is purely additive (a new opt-in filter, default off) and remains backwards compatible.
 

@@ -18,7 +18,7 @@
 > hand-committed classmap silently lacked — see commit 0446c59's manual
 > refresh). Not done from the plan: the packaging PHPUnit test (superseded by
 > the build.sh guards + CI job) and Plugin Check in CI (deferred to the wp.org
-> submission checklist). The Care to Change consumer's `bunnify-sync.sh` no
+> submission checklist). The downstream consumer's sync script no
 > longer needs its Composer regenerate step — updated the same day.
 
 ## Summary
@@ -123,8 +123,8 @@ directly raises the risk of a wp.org rejection or a back-and-forth review.
   the plumbing stays.
 - phpcs excludes `*/build-tools/vendor/*` and `*/vendor/*` (`phpcs.xml.dist`), so whichever
   autoloader we keep is currently unlinted.
-- The **caretochange** consumer carries a vendored *copy* of the plugin at
-  `wp-content/plugins/bunnify-frontend/` (a plain directory, not a symlink or Composer path repo).
+- A downstream consumer carries a vendored *copy* of the plugin at a
+  consuming site's `wp-content/plugins/bunnify-frontend/` (a plain directory, not a symlink or Composer path repo).
   Its entry file requires `build-tools/vendor/autoload.php` at line 27, mirroring trunk.
 
 ## Proposed approach
@@ -223,10 +223,10 @@ Author the missing `bin/build.sh` referenced by the root `composer.json` `"build
 - **Public API is untouched.** The plugin's contract is its WordPress filters/actions (see
   `docs/HOOKS.md`) and the single `bunnify_hostname` option. This change is purely bootstrap +
   packaging; no hook name, signature, or option key moves. Existing integrators are unaffected.
-- **caretochange consumer.** Its plugin copy at `wp-content/plugins/bunnify-frontend/` is a
+- **Downstream consumer.** Its plugin copy at a consuming site's `wp-content/plugins/bunnify-frontend/` is a
   wholesale vendored copy, not a symlink or Composer path repo, so it is replaced as a unit when it
   next syncs the new build. Because the new build's own entry file carries the new `require` path,
-  the copy is self-consistent — **no edit to any caretochange `composer.json` is required.** The one
+  the copy is self-consistent — **no edit to any consumer `composer.json` is required.** The one
   thing to verify: the consumer must pull the *built* layout (root `autoload.php` / `vendor/`), not
   cherry-pick the old `build-tools/vendor/` tree. Call this out in the consumer's update notes.
 - **Idempotent double-load.** The `BunnifyFrontend\APP_NAME` guard already prevents a second boot if
@@ -278,7 +278,7 @@ Author the missing `bin/build.sh` referenced by the root `composer.json` `"build
    (`composer check`) plus the packaging test and PCP.
 4. **Strip the old tree.** Remove `build-tools/` from the source (Option B) or reduce it to the
    build-only manifest (Option A); update `.distignore`/`.gitignore` and their explanatory comments.
-5. **Coordinate the consumer.** Sync caretochange's vendored copy to the new build and smoke-test the
+5. **Coordinate the consumer.** Sync the downstream consumer's vendored copy to the new build and smoke-test the
    site; document that the copy must track built output.
 6. **Tag a release build** and archive the zip that passed PCP as the wp.org submission candidate.
 
@@ -286,4 +286,4 @@ Author the missing `bin/build.sh` referenced by the root `composer.json` `"build
 
 **M** — the code delta is a one-line `require` change plus a small loader, but the honest cost is in
 the *missing* build tooling (`bin/build.sh` does not exist), the packaging/CI assertions, PCP
-validation, and coordinating the caretochange copy — a day or two, not an afternoon.
+validation, and coordinating the downstream consumer's copy — a day or two, not an afternoon.

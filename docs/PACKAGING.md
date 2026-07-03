@@ -136,9 +136,9 @@ filenames/sizes; the essentials:
 Screenshot filenames must line up with the numbered entries in the `readme.txt`
 `== Screenshots ==` section, or they will not caption correctly on the listing.
 
-### Consumer repo note (caretochange)
+### Consumer repo note
 
-The **caretochange** project vendors a copy of this plugin into
+A downstream consumer vendors a copy of this plugin into a consuming site's
 `wp-content/plugins/bunnify-frontend/`. After the repo restructure, that copy
 must be synced from the **`bunnify-frontend/` subdir**, not from the git root —
 the root is docs + toolchain and is not a valid plugin. The cleanest source for
@@ -188,7 +188,7 @@ Do these from a clean, up-to-date `main` working tree.
    SVN secrets are set.)
 10. **Verify on wp.org:** the listing shows the new version, `Tested up to`, and
     changelog; a fresh install activates cleanly.
-11. **Sync consumers:** update the caretochange vendored copy from the
+11. **Sync consumers:** update a downstream consumer's vendored copy from the
     `bunnify-frontend/` subdir (built output) and smoke-test the site.
 
 ## Related

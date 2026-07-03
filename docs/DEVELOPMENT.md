@@ -31,7 +31,7 @@ Two paths matter constantly:
 - **PSR-4 source** — `BunnifyFrontend\` maps to `bunnify-frontend/src/php/` (see `composer.json` `autoload`).
 - **Test namespace** — `BunnifyFrontend\Tests\` maps to `tests/` (`autoload-dev`).
 
-> Consumers (e.g. the caretochange project) copy the plugin into `wp-content/plugins/bunnify-frontend/` by syncing from the `bunnify-frontend/` **subdir**, not the repo root.
+> A consuming site copies the plugin into its `wp-content/plugins/bunnify-frontend/` by syncing from the `bunnify-frontend/` **subdir**, not the repo root.
 
 ## Prerequisites
 
@@ -171,4 +171,4 @@ The current suite is unit-only by design. A full integration/WP-test layer — b
 
 - `docs/blueprints/enhancements/full-test-coverage/README.md`
 
-Until that lands, validate WordPress-integration behaviour manually in a real install (the caretochange consumer site is the usual proving ground), and keep new logic in units small and mockable so it stays covered by the fast suite.
+Until that lands, validate WordPress-integration behaviour manually in a real install (a downstream consumer site is the usual proving ground), and keep new logic in units small and mockable so it stays covered by the fast suite.
