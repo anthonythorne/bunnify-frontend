@@ -127,4 +127,36 @@ final class ImageControllerTest extends TestCase {
 
 		$this->assertFalse( $this->invoke( 'is_admin_without_local_dev', array() ) );
 	}
+
+	public function test_attachment_for_js_ignores_non_images(): void {
+		Functions\when( 'wp_attachment_is_image' )->justReturn( false );
+
+		$response = array( 'id' => 7, 'url' => 'https://origin.example.com/doc.pdf' );
+
+		$this->assertSame(
+			$response,
+			( new ImageController() )->filter_attachment_for_js( $response, (object) array(), false )
+		);
+	}
+
+	public function test_attachment_for_js_leaves_admin_untouched_off_local_dev(): void {
+		// Production admin (local-dev off): the media library keeps origin URLs,
+		// exactly as before — this is the behaviour production relies on.
+		Functions\when( 'wp_attachment_is_image' )->justReturn( true );
+		Functions\when( 'is_admin' )->justReturn( true );
+		Functions\when( 'wp_get_environment_type' )->justReturn( 'production' );
+		Functions\when( 'get_option' )->justReturn( false );
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+
+		$response = array(
+			'id'    => 7,
+			'url'   => 'https://origin.example.com/a.jpg',
+			'sizes' => array( 'thumbnail' => array( 'url' => 'https://origin.example.com/a-150x150.jpg' ) ),
+		);
+
+		$this->assertSame(
+			$response,
+			( new ImageController() )->filter_attachment_for_js( $response, (object) array(), false )
+		);
+	}
 }

@@ -21,13 +21,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   alongside the core width/height/crop mapping.
 - Project wiki under `docs/` and a `docs/blueprints/` roadmap.
 
+### Added
+- The media library / editor picker now resolves through the CDN in local-dev
+  mode. The `wp.media` modal builds its size URLs from `wp_get_attachment_url()`
+  and the stored filenames (not `image_downsize`), so a new
+  `wp_prepare_attachment_for_js` filter rewrites the picker's `url` and every
+  `sizes.*.url` — otherwise an install without synced uploads showed blank
+  thumbnails in the picker even though the front end resolved fine. Gated like
+  the other filters: origin in production admin, per-image "local file if
+  present, else CDN" in local-dev mode. Opt-in override:
+  `bunnify_admin_allow_attachment_for_js`.
+
 ### Changed
 - Local-development mode is now automatic. It enables on any non-`production`
   environment via WordPress core's `wp_get_environment_type()` (no manual
-  toggle needed on local/staging), and it now covers admin surfaces too — the
-  media library and editor previews previously skipped rewriting wholesale, so
-  an install without synced uploads showed blank thumbnails. The mode's
-  per-image rule ("serve the local file if present, else the CDN") now applies
+  toggle needed on local/staging), and now also covers admin picker/preview
+  surfaces (the media library and featured-image previews). The mode's
+  per-image rule ("serve the local file if present, else the CDN") applies
   everywhere. Resolution order: the `bunnify_local_dev_mode_check` filter
   (force on/off) → automatic non-production detection → the
   `bunnify_local_dev_mode` option (a manual force-on for a production-typed

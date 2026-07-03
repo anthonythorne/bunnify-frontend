@@ -172,6 +172,11 @@ class ImageController extends Controller {
 		// Filter wp_get_attachment_image to ensure all img tags use original images.
 		add_filter( 'wp_get_attachment_image', [ $this, 'filter_attachment_image' ], 10, 5 );
 
+		// Media library / editor picker data (the wp.media modal builds its size
+		// URLs from wp_get_attachment_url() + the stored filenames, not through
+		// image_downsize, so the other filters never see it).
+		add_filter( 'wp_prepare_attachment_for_js', [ $this, 'filter_attachment_for_js' ], 10, 3 );
+
 		// Responsive image srcset substitution with proper order.
 		add_filter( 'wp_calculate_image_srcset_meta', [ $this, 'filter_srcset_meta' ], 5, 4 );
 		add_filter( 'wp_calculate_image_srcset', [ $this, 'filter_srcset_array' ], 10, 5 );
@@ -214,9 +219,12 @@ class ImageController extends Controller {
 		// Debug logging for image downsize processing.
 		$this->debug_log( "filter_image_downsize called with attachment_id: {$attachment_id}, size: " . ( is_array( $size ) ? '[' . implode( ',', $size ) . ']' : $size ), 'filter_image_downsize' );
 
-		// Don't process in admin unless specifically allowed (or in local-dev
-		// mode, where the exists-locally check below decides per image).
-		if ( $this->is_admin_without_local_dev() && false === apply_filters( 'bunnify_admin_allow_image_downsize', false, compact( 'image', 'attachment_id', 'size' ) ) ) {
+		// Don't process in admin unless specifically allowed. The media library
+		// / editor picker is handled separately by filter_attachment_for_js
+		// (on wp_prepare_attachment_for_js) — rewriting here instead breaks it,
+		// because wp_prepare_attachment_for_js drops any size whose image_downsize
+		// result is not an intermediate, and this filter always returns one.
+		if ( is_admin() && false === apply_filters( 'bunnify_admin_allow_image_downsize', false, compact( 'image', 'attachment_id', 'size' ) ) ) {
 			return $image;
 		}
 
@@ -346,9 +354,9 @@ class ImageController extends Controller {
 	 * @return array|false Modified image data or false.
 	 */
 	public function filter_attachment_img_srcs( array|false $image, int $attachment_id, string|array $size, bool $icon ): array|false {
-		// Don't process in admin unless specifically allowed (or in local-dev
-		// mode, where the exists-locally check below decides per image).
-		if ( $this->is_admin_without_local_dev() && false === apply_filters( 'bunnify_admin_allow_attachment_srcs', false, compact( 'image', 'attachment_id', 'size', 'icon' ) ) ) {
+		// Don't process in admin unless specifically allowed. (Admin picker data
+		// is rewritten by filter_attachment_for_js — see filter_image_downsize.)
+		if ( is_admin() && false === apply_filters( 'bunnify_admin_allow_attachment_srcs', false, compact( 'image', 'attachment_id', 'size', 'icon' ) ) ) {
 			return $image;
 		}
 
@@ -630,6 +638,90 @@ class ImageController extends Controller {
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Rewrite the media library / editor picker data to CDN URLs.
+	 *
+	 * The wp.media modal (and the Media Library grid) render from the JS payload
+	 * `wp_prepare_attachment_for_js()` builds — and it composes each size URL by
+	 * concatenating `wp_get_attachment_url()` with the stored size filename, so
+	 * it never passes through `image_downsize`/`wp_get_attachment_image_src` and
+	 * none of the other filters touch it. Without this, an install whose uploads
+	 * are not on the local filesystem shows blank thumbnails in the picker even
+	 * though the rendered front end and post thumbnails resolve fine.
+	 *
+	 * Gating matches the image filters: skipped in admin unless local-dev mode
+	 * is on (auto on non-production), and in local-dev mode a locally-present
+	 * original is left on origin — only missing files fall back to the CDN.
+	 *
+	 * @param array       $response   Prepared attachment data for JS.
+	 * @param \WP_Post    $attachment The attachment post object.
+	 * @param array|false $meta    Attachment metadata (unused).
+	 * @return array Modified response.
+	 */
+	public function filter_attachment_for_js( $response, $attachment, $meta ) {
+		unset( $meta );
+
+		if ( ! is_array( $response ) || empty( $response['id'] ) ) {
+			return $response;
+		}
+
+		$attachment_id = (int) $response['id'];
+
+		if ( ! wp_attachment_is_image( $attachment_id ) ) {
+			return $response;
+		}
+
+		// Keep origin URLs in admin unless local-dev mode is on (or explicitly
+		// allowed) — the same posture as the image-rewriting filters.
+		if ( $this->is_admin_without_local_dev()
+			&& false === apply_filters( 'bunnify_admin_allow_attachment_for_js', false, $response, $attachment ) ) {
+			return $response;
+		}
+
+		$original_url = wp_get_attachment_url( $attachment_id );
+		if ( empty( $original_url ) || ! URLTransformer::validate_image_url( $original_url ) ) {
+			return $response;
+		}
+
+		// Local-dev mode: a locally-present original stays on origin (its
+		// intermediates are alongside it); only missing files use the CDN.
+		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled()
+			&& URLTransformer::image_exists_locally( $original_url ) ) {
+			return $response;
+		}
+
+		// Full-size URL: no dimensions, preserving the original filename.
+		$full_cdn_url = URLTransformer::get_cdn_url_by_id( $attachment_id );
+		if ( $full_cdn_url ) {
+			$response['url'] = $full_cdn_url;
+		}
+
+		// Each intermediate size, rewritten with that size's dimensions.
+		if ( ! empty( $response['sizes'] ) && is_array( $response['sizes'] ) ) {
+			foreach ( $response['sizes'] as $size_name => $size_data ) {
+				$cdn_args = [];
+				if ( ! empty( $size_data['width'] ) ) {
+					$cdn_args['width'] = (int) $size_data['width'];
+				}
+				if ( ! empty( $size_data['height'] ) ) {
+					$cdn_args['height'] = (int) $size_data['height'];
+				}
+
+				// 'full' carries the original dimensions; send it unresized.
+				if ( 'full' === $size_name ) {
+					$cdn_args = [];
+				}
+
+				$size_cdn_url = URLTransformer::get_cdn_url_by_id( $attachment_id, $cdn_args );
+				if ( $size_cdn_url ) {
+					$response['sizes'][ $size_name ]['url'] = $size_cdn_url;
+				}
+			}
+		}
+
+		return $response;
 	}
 
 	/**
