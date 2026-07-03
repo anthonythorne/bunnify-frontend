@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- Core Web Vitals image delivery (opt-in). **Add Image Dimensions** writes
+  missing width/height onto rewritten content images (reduces CLS) without ever
+  overwriting an author value. **Prioritise LCP Image** marks the first
+  rewritten image on a page with `fetchpriority="high"` and stops it lazy-
+  loading (exactly one per request, reset each page load); `bunnify_lcp_image`
+  lets a site name a specific hero. Both off by default. (LCP `<link
+  rel=preload>` emission is tracked as a follow-up.)
 - Format negotiation (opt-in): a **Image Quality** (1-100) and **Image Format**
   (WebP / AVIF) setting that append the verified Bunny Optimizer `quality=` /
   `format=` params to generated CDN URLs. Off by default (output byte-identical);

@@ -1,6 +1,6 @@
 # CWV image delivery — mapping PageSpeed image opportunities to Bunnify
 
-- **Status:** Proposed
+- **Status:** Partially implemented (2026-07-03: CLS width/height + LCP fetchpriority live; format/quality via [[format-negotiation]]; LCP preload deferred)
 - **Created:** 2026-07-03
 - **Owner:** _unassigned_
 - **Related:** [[format-negotiation]] (the `format=`/`quality=` negotiation this blueprint only *emits* — content-type detection, `Accept`-header interplay, and Optimizer-off fallbacks are decided there), [[data-driven-settings]] (the schema + `sanitize_callback`s that the new opt-in toggles should register through), [[di-container-service-layer]] (where a shared CDN accessor would resolve the effective-enabled gate these features sit behind)

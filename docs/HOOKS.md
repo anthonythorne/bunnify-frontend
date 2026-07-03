@@ -49,6 +49,15 @@ add_action( 'bunnify_processing_attachment_image', function( $attachment_id, $si
 
 ## Custom Filters Provided
 
+### `bunnify_default_quality` / `bunnify_format`
+Per-image overrides for the format-negotiation defaults (quality 1-100;
+format `''`/`webp`/`avif`). Return value wins over the stored option.
+
+### `bunnify_emit_dimensions` / `bunnify_lcp_image`
+`bunnify_emit_dimensions` (bool) toggles adding missing width/height (CLS).
+`bunnify_lcp_image` (bool, receives the CDN URL) decides whether an image is
+the LCP element — return `false` to skip, or use it to name a specific hero.
+
 ### `bunnify_admin_allow_attachment_url`
 Return `true` to allow `wp_get_attachment_url()` rewriting in admin context
 (off by default, matching the other admin guards).

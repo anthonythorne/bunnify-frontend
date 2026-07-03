@@ -186,6 +186,11 @@ class ContentController extends Controller {
 								$processor->set_attribute( 'srcset', $new_srcset );
 							}
 						}
+
+						// Core Web Vitals decorations (opt-in): add missing
+						// width/height (CLS) and mark the LCP image.
+						\BunnifyFrontend\Library\Cwv::maybe_add_dimensions( $processor, $cdn_args['width'] ?? null, $cdn_args['height'] ?? null );
+						\BunnifyFrontend\Library\Cwv::maybe_mark_lcp( $processor, $cdn_url );
 					}
 				} else {
 					// Debug logging for failed attachment ID lookup.
