@@ -38,4 +38,5 @@ Cross-reference related blueprints with `[[slug]]` links.
 | --- | --- | --- |
 | [0001 — Enterprise restructure](0001-enterprise-restructure/README.md) | Implemented | Repo reorg, tooling, packaging, standards pass. |
 | [0002 — Quality & enterprise roadmap](0002-quality-enterprise-roadmap/README.md) | Accepted | The living roadmap: vision, definition of done, the PagePulse boundary, and the prioritised waves that sequence the enhancements. |
-| [Enhancements →](enhancements/README.md) | Mixed | Ten designed improvements (two implemented), sequenced by 0002. |
+| [Enhancements →](enhancements/README.md) | Mixed | Ten designed improvements (two implemented, one declined), sequenced by 0002. |
+| [Fixes →](fixes/README.md) | Open | Self-contained fix prompts from the 2026-07-06 final review pass (FIX-01…06, none urgent). |
