@@ -817,6 +817,13 @@ class ImageController extends Controller {
 			return $url;
 		}
 
+		// Keep origin URLs in admin (customizer/theme screens) unless local-dev
+		// mode is on, matching the other attachment filters.
+		if ( $this->is_admin_without_local_dev()
+			&& false === apply_filters( 'bunnify_admin_allow_header_image_url', false, $url ) ) {
+			return $url;
+		}
+
 		if ( ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
 			return $url;
 		}

@@ -67,6 +67,8 @@ final class CwvTest extends TestCase {
 	public function test_lcp_marks_first_image_only(): void {
 		$this->stub_option( 'bunnify_lcp_optimize', true );
 		Functions\when( 'is_admin' )->justReturn( false );
+		Functions\when( 'in_the_loop' )->justReturn( true );
+		Functions\when( 'is_main_query' )->justReturn( true );
 
 		$first  = $this->img( '<img src="a.jpg" loading="lazy">' );
 		$second = $this->img( '<img src="b.jpg" loading="lazy">' );
@@ -81,6 +83,9 @@ final class CwvTest extends TestCase {
 	}
 
 	public function test_lcp_off_by_default_and_in_admin(): void {
+		Functions\when( 'in_the_loop' )->justReturn( true );
+		Functions\when( 'is_main_query' )->justReturn( true );
+
 		$this->stub_option( 'bunnify_lcp_optimize', false );
 		Functions\when( 'is_admin' )->justReturn( false );
 		$p = $this->img( '<img src="a.jpg">' );
@@ -91,5 +96,17 @@ final class CwvTest extends TestCase {
 		Functions\when( 'is_admin' )->justReturn( true );
 		$p2 = $this->img( '<img src="a.jpg">' );
 		$this->assertFalse( Cwv::maybe_mark_lcp( $p2, 'https://cdn/a.jpg' ), 'never in admin' );
+	}
+
+	public function test_lcp_skipped_outside_the_main_loop(): void {
+		// Throwaway excerpt / SEO / secondary-query the_content passes must not
+		// consume the single LCP slot.
+		$this->stub_option( 'bunnify_lcp_optimize', true );
+		Functions\when( 'is_admin' )->justReturn( false );
+		Functions\when( 'in_the_loop' )->justReturn( false );
+		Functions\when( 'is_main_query' )->justReturn( true );
+
+		$p = $this->img( '<img src="a.jpg">' );
+		$this->assertFalse( Cwv::maybe_mark_lcp( $p, 'https://cdn/a.jpg' ), 'skipped outside the loop' );
 	}
 }

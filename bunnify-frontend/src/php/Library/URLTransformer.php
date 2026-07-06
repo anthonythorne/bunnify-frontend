@@ -171,12 +171,12 @@ class URLTransformer {
 		// This ensures BunnyCDN can pull from the correct path structure.
 		$cdn_url = $this->cdn_url_scheme( $this->bunnify_hostname, $scheme ) . $url_parts['path'];
 
-		// Add query parameters if provided.
-		if ( ! empty( $args ) ) {
-			$query_string = $this->build_query_string( $args );
-			if ( ! empty( $query_string ) ) {
-				$cdn_url .= '?' . $query_string;
-			}
+		// Always build the query string — even with no dimension args, format
+		// negotiation (quality/format) may add params. It returns '' when there
+		// is genuinely nothing to add, so byte-parity holds when the feature is off.
+		$query_string = $this->build_query_string( $args );
+		if ( '' !== $query_string ) {
+			$cdn_url .= '?' . $query_string;
 		}
 
 		return $cdn_url;
@@ -639,12 +639,12 @@ class URLTransformer {
 			// Build CDN URL using the original path (preserving -scaled, -full, etc.).
 			$cdn_url = $this->cdn_url_scheme( $this->bunnify_hostname, $scheme ) . $url_parts['path'];
 
-			// Add query parameters if provided.
-			if ( ! empty( $args ) ) {
-				$query_string = $this->build_query_string( $args );
-				if ( ! empty( $query_string ) ) {
-					$cdn_url .= '?' . $query_string;
-				}
+			// Always build the query string — format negotiation (quality/format)
+			// can add params even for a full-size/no-arg URL. Returns '' when
+			// there is nothing to add, preserving byte-parity when off.
+			$query_string = $this->build_query_string( $args );
+			if ( '' !== $query_string ) {
+				$cdn_url .= '?' . $query_string;
 			}
 
 			return $cdn_url;

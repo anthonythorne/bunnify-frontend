@@ -91,6 +91,15 @@ final class Cwv {
 			return false;
 		}
 
+		// Only the primary, in-loop content render may claim the single LCP
+		// slot. Excerpt/SEO/OG and secondary-query the_content passes (e.g.
+		// wp_trim_excerpt(), get_the_excerpt() during wp_head) run outside the
+		// main loop and would otherwise consume the slot before the real hero
+		// renders, silently no-opping or mis-targeting the optimization.
+		if ( ! in_the_loop() || ! is_main_query() ) {
+			return false;
+		}
+
 		/**
 		 * Whether this image is the LCP image. Default: the first eligible image.
 		 *

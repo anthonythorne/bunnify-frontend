@@ -58,9 +58,11 @@ format `''`/`webp`/`avif`). Return value wins over the stored option.
 `bunnify_lcp_image` (bool, receives the CDN URL) decides whether an image is
 the LCP element — return `false` to skip, or use it to name a specific hero.
 
-### `bunnify_admin_allow_attachment_url`
-Return `true` to allow `wp_get_attachment_url()` rewriting in admin context
-(off by default, matching the other admin guards).
+### `bunnify_admin_allow_attachment_url` / `bunnify_admin_allow_attachment_for_js` / `bunnify_admin_allow_header_image_url`
+Each returns `false` by default; return `true` to allow rewriting in admin
+context for that surface — `wp_get_attachment_url()`, the media-library /
+editor picker payload (`wp_prepare_attachment_for_js`), and the classic-theme
+header image respectively.
 
 ```php
 add_filter( 'bunnify_admin_allow_attachment_url', '__return_true' );
