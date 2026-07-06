@@ -49,9 +49,24 @@ add_action( 'bunnify_processing_attachment_image', function( $attachment_id, $si
 
 ## Custom Filters Provided
 
-### `bunnify_default_quality` / `bunnify_format`
-Per-image overrides for the format-negotiation defaults (quality 1-100;
-format `''`/`webp`/`avif`). Return value wins over the stored option.
+### `bunnify_default_quality`
+Overrides the default image quality (1-100). The stored **Image Quality**
+setting supplies the default; return a value to override per image.
+
+### `bunnify_format`
+Forces a specific output format (`webp`/`avif`) — **code-only, off by default.**
+WebP/AVIF are best served by BunnyCDN's zone-level automatic optimization, which
+negotiates on the browser's `Accept` header so only supporting browsers get the
+next-gen format. This filter emits `format=` in the URL, which forces the codec
+for **all** browsers — use it deliberately (e.g. per-image), not as a global
+switch.
+
+```php
+// Force AVIF only for a specific image path.
+add_filter( 'bunnify_format', function ( $format, $args ) {
+    return isset( $args['width'] ) && $args['width'] > 1200 ? 'avif' : $format;
+}, 10, 2 );
+```
 
 ### `bunnify_emit_dimensions` / `bunnify_lcp_image`
 `bunnify_emit_dimensions` (bool) toggles adding missing width/height (CLS).

@@ -14,13 +14,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   loading (exactly one per request, reset each page load); `bunnify_lcp_image`
   lets a site name a specific hero. Both off by default. (LCP `<link
   rel=preload>` emission is tracked as a follow-up.)
-- Format negotiation (opt-in): a **Image Quality** (1-100) and **Image Format**
-  (WebP / AVIF) setting that append the verified Bunny Optimizer `quality=` /
-  `format=` params to generated CDN URLs. Off by default (output byte-identical);
-  explicit per-image args and the `bunnify_default_quality` / `bunnify_format`
-  filters take precedence; `is_cdn_url()` already treats those params as CDN
-  markers so already-processed detection is unaffected. AVIF is offered but
-  flagged experimental (limited browser support).
+- Image quality control (opt-in): an **Image Quality** (1-100) setting that
+  appends the verified Bunny Optimizer `quality=` param to generated CDN URLs
+  (all URLs, including full-size/bare). Off by default (output byte-identical);
+  the `bunnify_default_quality` filter overrides per image.
+- Forced next-gen format via the **code-only `bunnify_format` filter**
+  (`webp`/`avif`). Deliberately not a settings toggle: WebP/AVIF are best served
+  by BunnyCDN's zone-level automatic optimization (which negotiates on the
+  `Accept` header, so only supporting browsers receive them); emitting `format=`
+  in the URL forces the codec for all browsers, so it is an advanced,
+  per-image override. `is_cdn_url()` treats `quality`/`format` as CDN markers.
 - URL-surface coverage for bare attachment URLs. Beyond the `<img>`/resize
   pipeline, the plugin now rewrites `wp_get_attachment_url()` (ACF URL fields,
   theme templates, REST `source_url`, block bindings), the classic-theme custom

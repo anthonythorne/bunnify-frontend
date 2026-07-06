@@ -1,6 +1,16 @@
 # Format negotiation: next-gen formats & tuned quality
 
 - **Status:** Implemented (2026-07-03)
+
+> **Update (2026-07-03): `format` is a code-only filter, not a settings toggle.**
+> WebP/AVIF are best served by BunnyCDN's zone-level automatic optimization,
+> which negotiates on the browser `Accept` header (only supporting browsers get
+> the next-gen format). Emitting `format=` in the URL forces the codec for ALL
+> browsers, so it was demoted from a settings dropdown to the deliberate,
+> per-image `bunnify_format` filter (default off). `quality` remains a safe,
+> Accept-independent setting. Both now apply to full-size/bare URLs too, not
+> just sized variants.
+
 - **Created:** 2026-07-03
 - **Owner:** _unassigned_
 - **Related:** [[cwv-image-delivery]] (the Core Web Vitals image-delivery story this feeds — smaller bytes, faster LCP), [[data-driven-settings]] (the settings schema these two new options should ultimately register through)

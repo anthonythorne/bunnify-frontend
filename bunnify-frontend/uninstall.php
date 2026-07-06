@@ -25,7 +25,6 @@ function bunnify_frontend_uninstall_site(): void {
 		'bunnify_enabled',
 		'bunnify_hostname',
 		'bunnify_default_quality',
-		'bunnify_format',
 		'bunnify_emit_dimensions',
 		'bunnify_lcp_optimize',
 		'bunnify_local_dev_mode',

@@ -91,15 +91,6 @@ class SettingsController extends Controller {
 		);
 		register_setting(
 			'bunnify_frontend_options',
-			'bunnify_format',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => [ $this, 'sanitize_format' ],
-				'default'           => '',
-			)
-		);
-		register_setting(
-			'bunnify_frontend_options',
 			'bunnify_debug_refreshes',
 			array(
 				'type'              => 'integer',
@@ -147,14 +138,6 @@ class SettingsController extends Controller {
 			'bunnify_default_quality_field',
 			__( 'Image Quality', 'bunnify-frontend' ),
 			[ $this, 'default_quality_field_callback' ],
-			'bunnify-frontend',
-			'bunnify_frontend_settings_section',
-		);
-
-		add_settings_field(
-			'bunnify_format_field',
-			__( 'Image Format', 'bunnify-frontend' ),
-			[ $this, 'format_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_settings_section',
 		);
@@ -324,16 +307,6 @@ class SettingsController extends Controller {
 	}
 
 	/**
-	 * Sanitize the output format to a supported value ('' | 'webp' | 'avif').
-	 *
-	 * @param mixed $value Raw submitted value.
-	 * @return string
-	 */
-	public function sanitize_format( $value ): string {
-		return in_array( $value, array( 'webp', 'avif' ), true ) ? (string) $value : '';
-	}
-
-	/**
 	 * Settings section callback.
 	 */
 	public function settings_section_callback() {
@@ -382,21 +355,6 @@ class SettingsController extends Controller {
 		<input type="number" name="bunnify_default_quality" value="<?php echo esc_attr( (string) get_option( 'bunnify_default_quality', '' ) ); ?>"
 			min="1" max="100" step="1" class="small-text" placeholder="85" />
 		<p class="description"><?php esc_html_e( 'Image quality (1-100) sent to the CDN. Leave blank to use the CDN default. Lower values mean smaller files.', 'bunnify-frontend' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Output format field callback.
-	 */
-	public function format_field_callback() {
-		$format = (string) get_option( 'bunnify_format', '' );
-		?>
-		<select name="bunnify_format">
-			<option value="" <?php selected( '', $format ); ?>><?php esc_html_e( 'Original format', 'bunnify-frontend' ); ?></option>
-			<option value="webp" <?php selected( 'webp', $format ); ?>>WebP</option>
-			<option value="avif" <?php selected( 'avif', $format ); ?>><?php esc_html_e( 'AVIF (experimental)', 'bunnify-frontend' ); ?></option>
-		</select>
-		<p class="description"><?php esc_html_e( 'Serve images in a next-gen format via the CDN. WebP is widely supported; AVIF has limited browser support.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 

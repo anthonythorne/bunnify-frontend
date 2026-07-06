@@ -166,13 +166,19 @@ final class URLTransformerTest extends TestCase {
 	 *
 	 * @param array $options Option map.
 	 */
-	private function stub_format_options( array $options ): void {
+	private function stub_format_options( array $options, string $format = '' ): void {
 		Functions\when( 'get_option' )->alias(
 			static function ( string $name, $default = false ) use ( $options ) {
 				return array_key_exists( $name, $options ) ? $options[ $name ] : $default;
 			}
 		);
-		Functions\when( 'apply_filters' )->returnArg( 2 );
+		// Quality is option-driven (filter passes it through); format is
+		// filter-only (no stored option) so the bunnify_format filter supplies it.
+		Functions\when( 'apply_filters' )->alias(
+			static function ( string $hook, $value = null ) use ( $format ) {
+				return 'bunnify_format' === $hook ? $format : $value;
+			}
+		);
 	}
 
 	public function test_format_negotiation_off_by_default_is_byte_parity(): void {
@@ -191,10 +197,8 @@ final class URLTransformerTest extends TestCase {
 		// overrides must be applied after construction.
 		$transformer = $this->make();
 		$this->stub_format_options(
-			array(
-				'bunnify_default_quality' => '75',
-				'bunnify_format'          => 'webp',
-			)
+			array( 'bunnify_default_quality' => '75' ),
+			'webp'
 		);
 
 		$this->assertSame(
@@ -206,10 +210,8 @@ final class URLTransformerTest extends TestCase {
 	public function test_format_negotiation_explicit_args_win_over_defaults(): void {
 		$transformer = $this->make();
 		$this->stub_format_options(
-			array(
-				'bunnify_default_quality' => '75',
-				'bunnify_format'          => 'webp',
-			)
+			array( 'bunnify_default_quality' => '75' ),
+			'webp'
 		);
 
 		// A caller passing its own quality/format must not be overridden.
@@ -229,10 +231,8 @@ final class URLTransformerTest extends TestCase {
 	public function test_format_negotiation_ignores_out_of_range_quality_and_bad_format(): void {
 		$transformer = $this->make();
 		$this->stub_format_options(
-			array(
-				'bunnify_default_quality' => '0',
-				'bunnify_format'          => 'gif',
-			)
+			array( 'bunnify_default_quality' => '0' ),
+			'gif'
 		);
 
 		$this->assertSame(

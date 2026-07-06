@@ -237,12 +237,19 @@ class URLTransformer {
 
 		if ( ! $has_arg( 'format' ) ) {
 			/**
-			 * Default output format for CDN transforms.
+			 * Force a specific output format ('webp'/'avif') — code-only.
 			 *
-			 * @param string $format Stored `bunnify_format` ('webp'/'avif'; empty = original format).
+			 * WebP/AVIF are best served by BunnyCDN's zone-level automatic
+			 * optimization, which negotiates on the browser's `Accept` header so
+			 * only supporting browsers receive the next-gen format. Emitting
+			 * `format=` in the URL overrides that and forces the codec for ALL
+			 * browsers, so it is intentionally a deliberate filter (default off /
+			 * empty) rather than a settings toggle.
+			 *
+			 * @param string $format Empty by default. Return 'webp'/'avif' to force it.
 			 * @param array  $args   The transform args.
 			 */
-			$format = apply_filters( 'bunnify_format', get_option( 'bunnify_format', '' ), $args );
+			$format = apply_filters( 'bunnify_format', '', $args );
 			if ( in_array( $format, [ 'webp', 'avif' ], true ) ) {
 				$query_parts['format'] = $format;
 			}
