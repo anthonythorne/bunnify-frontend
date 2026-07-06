@@ -157,9 +157,6 @@ class ImageController extends Controller {
 	 * Initialize WordPress hooks for image processing.
 	 */
 	public function set_up() {
-		// Reset the per-request LCP assignment before each page renders.
-		add_action( 'wp', [ \BunnifyFrontend\Library\Cwv::class, 'reset' ] );
-
 		// Core image retrieval.
 		add_filter( 'image_downsize', [ $this, 'filter_image_downsize' ], 10, 3 );
 
@@ -574,9 +571,6 @@ class ImageController extends Controller {
 			if ( $height ) {
 				$processor->set_attribute( 'height', $height );
 			}
-
-			// Core Web Vitals (opt-in): post thumbnails are often the LCP image.
-			\BunnifyFrontend\Library\Cwv::maybe_mark_lcp( $processor, $cdn_url );
 
 			// Handle srcset attribute if it exists.
 			$srcset_value = $processor->get_attribute( 'srcset' );

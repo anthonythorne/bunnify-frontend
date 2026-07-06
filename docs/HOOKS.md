@@ -68,11 +68,6 @@ add_filter( 'bunnify_format', function ( $format, $args ) {
 }, 10, 2 );
 ```
 
-### `bunnify_emit_dimensions` / `bunnify_lcp_image`
-`bunnify_emit_dimensions` (bool) toggles adding missing width/height (CLS).
-`bunnify_lcp_image` (bool, receives the CDN URL) decides whether an image is
-the LCP element — return `false` to skip, or use it to name a specific hero.
-
 ### `bunnify_admin_allow_attachment_url` / `bunnify_admin_allow_attachment_for_js` / `bunnify_admin_allow_header_image_url`
 Each returns `false` by default; return `true` to allow rewriting in admin
 context for that surface — `wp_get_attachment_url()`, the media-library /

@@ -79,7 +79,7 @@ Waves are ordered so each unblocks the next. Cross-cutting quality
 | # | Blueprint | Why now |
 | --- | --- | --- |
 | 3 | [[performance-benchmarking]] | Bunnify runs per-image on every request; measure and cap its own overhead, memoise the hot lookups (attachment-id-from-URL, options), and prove queries don't scale with duplicate images. |
-| 4 | [[cwv-image-delivery]] | Turn PageSpeed/Lighthouse image opportunities into opt-in features: explicit width/height (CLS), `fetchpriority`/preload for the LCP image, lazy-load coordination. |
+| 4 | [[cwv-image-delivery]] | **Declined** — WordPress 7.0 core already emits width/height + `fetchpriority`; CWV is the developer/theme's responsibility, not this plugin's. Built then reverted. |
 | 5 | [[format-negotiation]] | WebP/AVIF and quality via Bunny Optimizer params, off by default, with `is_cdn_url()` detection kept intact. |
 
 ### Wave 3 — Delivery diagnostics (bunnify-scoped, not PagePulse)

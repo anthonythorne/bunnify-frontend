@@ -98,8 +98,6 @@ class SettingsController extends Controller {
 				'default'           => 10,
 			)
 		);
-		register_setting( 'bunnify_frontend_options', 'bunnify_emit_dimensions', $checkbox );
-		register_setting( 'bunnify_frontend_options', 'bunnify_lcp_optimize', $checkbox );
 		register_setting( 'bunnify_frontend_options', 'bunnify_debug_enabled', $checkbox );
 		register_setting( 'bunnify_frontend_options', 'bunnify_local_dev_mode', $checkbox );
 
@@ -138,22 +136,6 @@ class SettingsController extends Controller {
 			'bunnify_default_quality_field',
 			__( 'Image Quality', 'bunnify-frontend' ),
 			[ $this, 'default_quality_field_callback' ],
-			'bunnify-frontend',
-			'bunnify_frontend_settings_section',
-		);
-
-		add_settings_field(
-			'bunnify_emit_dimensions_field',
-			__( 'Add Image Dimensions (CLS)', 'bunnify-frontend' ),
-			[ $this, 'emit_dimensions_field_callback' ],
-			'bunnify-frontend',
-			'bunnify_frontend_settings_section',
-		);
-
-		add_settings_field(
-			'bunnify_lcp_optimize_field',
-			__( 'Prioritise LCP Image', 'bunnify-frontend' ),
-			[ $this, 'lcp_optimize_field_callback' ],
 			'bunnify-frontend',
 			'bunnify_frontend_settings_section',
 		);
@@ -355,26 +337,6 @@ class SettingsController extends Controller {
 		<input type="number" name="bunnify_default_quality" value="<?php echo esc_attr( (string) get_option( 'bunnify_default_quality', '' ) ); ?>"
 			min="1" max="100" step="1" class="small-text" placeholder="85" />
 		<p class="description"><?php esc_html_e( 'Image quality (1-100) sent to the CDN. Leave blank to use the CDN default. Lower values mean smaller files.', 'bunnify-frontend' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * Emit-dimensions (CLS) field callback.
-	 */
-	public function emit_dimensions_field_callback() {
-		?>
-		<input type="checkbox" name="bunnify_emit_dimensions" value="1" <?php checked( 1, get_option( 'bunnify_emit_dimensions' ), true ); ?> />
-		<p class="description"><?php esc_html_e( 'Add width/height attributes to rewritten content images that lack them, so the browser can reserve space (reduces layout shift / CLS). Never overwrites an author-set dimension.', 'bunnify-frontend' ); ?></p>
-		<?php
-	}
-
-	/**
-	 * LCP-optimize field callback.
-	 */
-	public function lcp_optimize_field_callback() {
-		?>
-		<input type="checkbox" name="bunnify_lcp_optimize" value="1" <?php checked( 1, get_option( 'bunnify_lcp_optimize' ), true ); ?> />
-		<p class="description"><?php esc_html_e( 'Mark the first rewritten image on a page with fetchpriority="high" (and stop it lazy-loading) so the Largest Contentful Paint image loads sooner. Use the bunnify_lcp_image filter to name a specific hero.', 'bunnify-frontend' ); ?></p>
 		<?php
 	}
 
@@ -694,24 +656,6 @@ class SettingsController extends Controller {
 		}
 
 		return (bool) $enabled;
-	}
-
-	/**
-	 * Whether to add missing width/height attributes to rewritten images (CLS).
-	 *
-	 * @return bool
-	 */
-	public static function emit_dimensions(): bool {
-		return (bool) get_option( 'bunnify_emit_dimensions', false );
-	}
-
-	/**
-	 * Whether to prioritise the first rewritten image as the LCP element.
-	 *
-	 * @return bool
-	 */
-	public static function lcp_optimize(): bool {
-		return (bool) get_option( 'bunnify_lcp_optimize', false );
 	}
 
 	/**

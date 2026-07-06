@@ -1,6 +1,19 @@
 # CWV image delivery — mapping PageSpeed image opportunities to Bunnify
 
-- **Status:** Partially implemented (2026-07-03: CLS width/height + LCP fetchpriority live; format/quality via [[format-negotiation]]; LCP preload deferred)
+- **Status:** Declined (2026-07-03) — see decision note below
+
+> **Decision (2026-07-03): declined and reverted.** Built, then removed. Core
+> Web Vitals is the developer/theme's responsibility, not a URL-rewriter's, and
+> WordPress core already covers the basics: verified on WP 7.0 that content
+> images already carry `width`/`height` (block editor + core) and
+> `fetchpriority`/`loading` (core's `wp_get_loading_optimization_attributes()`,
+> since 6.3) with this feature OFF. The plugin's LCP marking added ≤1
+> attribute, often 0, for the most complex code in the feature (per-request
+> static state + loop guards + a reset hook) — net duplication of core for
+> disproportionate complexity. Quality (a safe, Accept-independent CDN param)
+> stays; format is a code-only filter (see [[format-negotiation]]). Kept as a
+> record so the analysis isn't re-litigated.
+
 - **Created:** 2026-07-03
 - **Owner:** _unassigned_
 - **Related:** [[format-negotiation]] (the `format=`/`quality=` negotiation this blueprint only *emits* — content-type detection, `Accept`-header interplay, and Optimizer-off fallbacks are decided there), [[data-driven-settings]] (the schema + `sanitize_callback`s that the new opt-in toggles should register through), [[di-container-service-layer]] (where a shared CDN accessor would resolve the effective-enabled gate these features sit behind)
