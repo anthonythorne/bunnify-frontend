@@ -64,8 +64,13 @@ only `/wp-content/uploads/` URLs are processed.
 
 = Does it work in local development? =
 
-Enable **Local Development Mode** under **Media → BunnyCDN**. When a file exists
-locally, the CDN rewrite is skipped so you keep working offline.
+Yes. **Local Development Mode** enables automatically on `local` and
+`development` environments (WordPress core's `WP_ENVIRONMENT_TYPE`). When a file
+exists locally the CDN rewrite is skipped so you keep working offline; missing
+files still resolve from the CDN so nothing looks broken. On `staging` /
+`production` it stays off by default — tick the checkbox under
+**Media → BunnyCDN** to force it on, or use the `bunnify_local_dev_mode_check`
+filter for full control.
 
 = Where is the developer documentation? =
 

@@ -65,6 +65,20 @@ final class SettingsControllerTest extends TestCase {
 	}
 
 	/**
+	 * The wp-config BUNNIFY_DISABLE kill switch wins over an enabled option.
+	 * Runs isolated because a defined constant leaks across a process.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_is_enabled_false_when_bunnify_disable_constant_set(): void {
+		define( 'BUNNIFY_DISABLE', true );
+		// Even explicitly enabled, the constant forces the gate false — and it
+		// short-circuits before get_option, so no option stub is needed.
+		$this->assertFalse( SettingsController::is_enabled() );
+	}
+
+	/**
 	 * Set up the local-dev-mode inputs: the override filter, the environment
 	 * type, and the manual option.
 	 *

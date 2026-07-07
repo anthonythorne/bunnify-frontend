@@ -27,15 +27,21 @@ class ImageProcessor {
 	use CachingTrait;
 
 	/**
-	 * Allowed image extensions.
+	 * Image extensions Bunnify will rewrite — the single source of truth,
+	 * shared with {@see URLTransformer::validate_image_url()}.
+	 *
+	 * SVG is intentionally excluded (vector/UI assets are served from origin).
+	 * Opt other extensions in per-domain at runtime via the
+	 * `bunnify_any_extension_for_domain` filter.
 	 */
-	private static array $allowed_extensions = [
+	public const ALLOWED_EXTENSIONS = [
 		'gif',
 		'jpg',
 		'jpeg',
 		'png',
 		'webp',
 		'heic',
+		'avif',
 	];
 
 	/**
@@ -46,7 +52,7 @@ class ImageProcessor {
 	 */
 	public static function parse_dimensions_from_filename( string $filename ): array|false {
 		// Extract dimensions like -1024x684 or --1024x684 from filename.
-		if ( preg_match( '#(-+\d+x\d+)\.(' . implode( '|', self::$allowed_extensions ) . '){1}$#i', $filename, $matches ) ) {
+		if ( preg_match( '#(-+\d+x\d+)\.(' . implode( '|', self::ALLOWED_EXTENSIONS ) . '){1}$#i', $filename, $matches ) ) {
 			$dimensions = trim( $matches[1], '-' );
 			$parts      = explode( 'x', $dimensions );
 			if ( count( $parts ) === 2 ) {
@@ -119,58 +125,6 @@ class ImageProcessor {
 	}
 
 	/**
-	 * Validate image URL for Bunnify processing.
-	 *
-	 * @param string $url Image URL.
-	 * @return bool
-	 */
-	public static function validate_image_url( string $url ): bool {
-		$parsed_url = wp_parse_url( $url );
-
-		if ( ! $parsed_url ) {
-			return false;
-		}
-
-		// Parse URL and ensure needed keys exist.
-		$url_info = wp_parse_args(
-			$parsed_url,
-			[
-				'scheme' => null,
-				'host'   => null,
-				'port'   => null,
-				'path'   => null,
-			],
-		);
-
-		// Bail if scheme isn't http/https or port is set that isn't port 80.
-		if (
-			( 'http' !== $url_info['scheme'] && 'https' !== $url_info['scheme'] ) ||
-			( ! in_array( $url_info['port'], [ 80, 443, null ], true ) )
-		) {
-			return false;
-		}
-
-		// Bail if no host is found.
-		if ( null === $url_info['host'] ) {
-			return false;
-		}
-
-		// Bail if no path is found.
-		if ( null === $url_info['path'] ) {
-			return false;
-		}
-
-		// Ensure image extension is acceptable.
-		if ( ! in_array( strtolower( pathinfo( $url_info['path'], PATHINFO_EXTENSION ) ), self::$allowed_extensions, true ) ) {
-			return false;
-		}
-
-		// Allow filtering of validation results. Cast so a truthy non-bool
-		// filter return cannot trip the strict bool return type.
-		return (bool) apply_filters( 'bunnify_validate_image_url', true, $url, $parsed_url );
-	}
-
-	/**
 	 * Get attachment ID from URL with caching.
 	 *
 	 * @param string $url The image URL.
@@ -194,10 +148,19 @@ class ImageProcessor {
 				$stripped_url  = preg_replace( '#(-+\d+x\d+)\.#', '.', $url_without_query );
 				$attachment_id = self::attachment_url_to_postid( $stripped_url );
 
-				// If still not found, try adding -scaled suffix (common WordPress pattern).
-				if ( ! $attachment_id && ! strpos( $stripped_url, '-scaled.' ) ) {
-					$scaled_url    = str_replace( '.', '-scaled.', $stripped_url );
-					$attachment_id = self::attachment_url_to_postid( $scaled_url );
+				// If still not found, try adding the -scaled suffix (WordPress
+				// stores originals over the big-image threshold as *-scaled.ext).
+				// Insert -scaled before the extension only — a naive
+				// str_replace('.', '-scaled.') would mangle the host and path.
+				if ( ! $attachment_id && false === strpos( $stripped_url, '-scaled.' ) ) {
+					$scaled_url = preg_replace(
+						'#\.(' . implode( '|', self::ALLOWED_EXTENSIONS ) . ')$#i',
+						'-scaled.$1',
+						$stripped_url
+					);
+					if ( $scaled_url !== $stripped_url ) {
+						$attachment_id = self::attachment_url_to_postid( $scaled_url );
+					}
 				}
 			}
 

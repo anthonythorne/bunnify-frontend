@@ -1,7 +1,7 @@
 # FIX-05 — `transform_url_direct()` bypasses the transformer it just initialised
 
 - **Severity:** Low (consistency: quality param, skip filters, kill-switch, scheme)
-- **Status:** Open
+- **Status:** Done (2026-07-06)
 - **Found:** 2026-07-06 final review pass
 
 ## Problem

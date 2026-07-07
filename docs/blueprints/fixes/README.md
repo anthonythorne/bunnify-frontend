@@ -5,18 +5,17 @@ settled. Each `FIX-0N` file is a **self-contained prompt for an AI session**
 (or a human): problem with evidence, root cause, the exact fix, tests to add,
 and acceptance criteria. Work them top-down; each is independently shippable.
 
-**None are urgent.** The plugin is correct and production-safe as-is for a
-configured install (hostname set, no media offloading). These are polish /
-edge-case items deferred deliberately.
+**All six landed 2026-07-06** (Opus pass): implemented, unit-tested, gate green,
+and verified end-to-end. Table kept as the record of what each addressed.
 
 | # | Fix | Severity | One-liner |
 | --- | --- | --- | --- |
-| [FIX-01](FIX-01-bunnify-disable-kill-switch.md) | `BUNNIFY_DISABLE` kill-switch | Medium | readme promises the constant disables the CDN; it only gates 2 of ~14 paths — honour it in `is_enabled()`. |
-| [FIX-02](FIX-02-scaled-url-retry.md) | `-scaled` lookup retry is broken | Medium-low | `str_replace('.', '-scaled.', $url)` mangles every dot (`example-scaled.com`) — the fallback never matches. |
-| [FIX-03](FIX-03-non-upload-origin-fallback.md) | Size collapse for non-uploads attachments | Low | `get_cdn_url_by_id()`'s `?? $original_url` returns the full-size origin for offloaded/custom-baseurl media. |
-| [FIX-04](FIX-04-avif-extension-allowlist.md) | AVIF never rewrites | Low | Two duplicated extension allow-lists, both missing `avif` (WP 6.5+ accepts AVIF uploads). |
-| [FIX-05](FIX-05-transform-url-direct-bypass.md) | `transform_url_direct()` bypasses the transformer | Low | Hand-builds the URL, skipping quality, `bunnify_skip_for_url`, `BUNNIFY_DISABLE`, and scheme logic. |
-| [FIX-06](FIX-06-minor-cleanups.md) | Minor cleanups batch | Low | Dead duplicate validator, redundant guards, `full`-size srcset edge, uncached metadata call, stale docblock claim. |
+| [FIX-01](FIX-01-bunnify-disable-kill-switch.md) | `BUNNIFY_DISABLE` kill-switch | Medium · **Done** | readme promises the constant disables the CDN; it only gates 2 of ~14 paths — honour it in `is_enabled()`. |
+| [FIX-02](FIX-02-scaled-url-retry.md) | `-scaled` lookup retry is broken | Medium-low · **Done** | `str_replace('.', '-scaled.', $url)` mangles every dot (`example-scaled.com`) — the fallback never matches. |
+| [FIX-03](FIX-03-non-upload-origin-fallback.md) | Size collapse for non-uploads attachments | Low · **Done** | `get_cdn_url_by_id()`'s `?? $original_url` returns the full-size origin for offloaded/custom-baseurl media. |
+| [FIX-04](FIX-04-avif-extension-allowlist.md) | AVIF never rewrites | Low · **Done** | Two duplicated extension allow-lists, both missing `avif` (WP 6.5+ accepts AVIF uploads). |
+| [FIX-05](FIX-05-transform-url-direct-bypass.md) | `transform_url_direct()` bypasses the transformer | Low · **Done** | Hand-builds the URL, skipping quality, `bunnify_skip_for_url`, `BUNNIFY_DISABLE`, and scheme logic. |
+| [FIX-06](FIX-06-minor-cleanups.md) | Minor cleanups batch | Low · **Done** | Dead duplicate validator, redundant guards, `full`-size srcset edge, uncached metadata call, stale docblock claim. |
 
 ## Ground rules for every fix
 

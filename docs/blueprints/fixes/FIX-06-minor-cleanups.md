@@ -1,7 +1,7 @@
 # FIX-06 — Minor cleanups batch (one small PR)
 
 - **Severity:** Low (hygiene; no user-visible behaviour change expected)
-- **Status:** Open
+- **Status:** Done (2026-07-06)
 - **Found:** 2026-07-06 final review pass
 
 Five small items, safe to land together.

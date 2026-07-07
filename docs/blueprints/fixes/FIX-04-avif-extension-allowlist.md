@@ -1,7 +1,7 @@
 # FIX-04 — AVIF uploads never rewrite; extension allow-list duplicated
 
 - **Severity:** Low
-- **Status:** Open
+- **Status:** Done (2026-07-06)
 - **Found:** 2026-07-06 final review pass
 
 ## Problem

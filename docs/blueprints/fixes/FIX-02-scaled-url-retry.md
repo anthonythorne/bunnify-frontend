@@ -1,7 +1,7 @@
 # FIX-02 — `-scaled` lookup retry builds a garbage URL and never matches
 
 - **Severity:** Medium-low (silent feature failure + a wasted, cached DB query)
-- **Status:** Open
+- **Status:** Done (2026-07-06)
 - **Found:** 2026-07-06 final review pass
 
 ## Problem

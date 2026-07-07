@@ -272,7 +272,8 @@ class ContentController extends Controller {
 	 * @return string|null The CDN URL, or null to leave the original untouched.
 	 */
 	private function rewrite_loose_image_url( string $url ): ?string {
-		if ( '' === $url || ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
+		// validate_image_url() already rejects already-CDN URLs.
+		if ( '' === $url || ! URLTransformer::validate_image_url( $url ) ) {
 			return null;
 		}
 
@@ -380,38 +381,22 @@ class ContentController extends Controller {
 	 * @return string|false The CDN URL or false on failure.
 	 */
 	private function transform_url_direct( string $image_url ): string|false {
-		// Check local development mode first.
-		if ( \BunnifyFrontend\Controller\SettingsController::is_local_dev_mode_enabled() ) {
-			if ( URLTransformer::image_exists_locally( $image_url ) ) {
-				$this->debug_log( "Local development mode enabled and image exists locally: {$image_url}, bypassing direct URL transformation", 'content_processing' );
-				return false; // Return false to keep original URL unchanged.
-			}
-		}
-
 		if ( ! $this->init_cdn() ) {
 			return false;
 		}
 
-		// Parse the URL to get the path.
-		$url_parts = wp_parse_url( $image_url );
-		if ( ! is_array( $url_parts ) || empty( $url_parts['host'] ) || empty( $url_parts['path'] ) ) {
-			return false;
-		}
+		// Delegate to the transformer so this path honours the same quality
+		// param, the bunnify_skip_for_url / _pre_image_url / _pre_args /
+		// _post_image_url filters, the BUNNIFY_DISABLE kill switch, the
+		// local-dev bypass, and scheme selection as every other rewrite. It
+		// previously hand-built a bare `https://host + path` URL, silently
+		// skipping all of those.
+		$cdn_url = $this->url_transformer->transform_url( $image_url );
 
-		// Check if this is a local WordPress upload.
-		$upload_dir  = wp_upload_dir();
-		$upload_path = wp_parse_url( $upload_dir['baseurl'], PHP_URL_PATH );
-
-		// Only transform if it's a local upload.
-		if ( ! empty( $upload_path ) && strpos( $url_parts['path'], $upload_path ) === 0 ) {
-			// Build CDN URL using the original path (preserving -scaled, -full, etc.).
-			$cdn_hostname = get_option( 'bunnify_hostname' );
-			if ( ! empty( $cdn_hostname ) ) {
-				return 'https://' . $cdn_hostname . $url_parts['path'];
-			}
-		}
-
-		return false;
+		// transform_url() returns the input unchanged when it declines
+		// (non-upload, disabled, local-dev bypass, skip filter); only a URL
+		// actually moved to the CDN host counts as a transform.
+		return URLTransformer::is_cdn_url( $cdn_url ) ? $cdn_url : false;
 	}
 
 	/**

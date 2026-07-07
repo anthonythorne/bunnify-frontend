@@ -76,6 +76,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   times each).
 
 ### Fixed
+- Final review-pass fixes (`docs/blueprints/fixes/`): the `BUNNIFY_DISABLE`
+  wp-config constant is now the real kill switch (honoured in
+  `is_enabled()`, so it stops the whole attachment pipeline, not just two
+  paths); the `-scaled` attachment-lookup fallback inserts the suffix before
+  the extension only (it previously ran `str_replace('.', '-scaled.')`, mangling
+  the host so it never matched); `get_cdn_url_by_id()` returns `null` rather than
+  the full-size origin URL for attachments outside the uploads path (offloaded
+  media), avoiding an intermediate-size collapse; `transform_url_direct()`
+  delegates to `URLTransformer::transform_url()` so the content direct path
+  honours quality, the skip/pre/post filters, the kill switch, and scheme
+  selection like every other rewrite; AVIF is now in the (single, shared)
+  extension allow-list so `.avif` uploads rewrite; and a batch of cleanups (a
+  dead duplicate validator removed with its `bunnify_validate_image_url` filter
+  moved onto the live validator, redundant `is_cdn_url()` guards dropped, a
+  malformed `full`-size srcset edge guarded, an uncached metadata read switched
+  to the cached helper, and a stale "nonce validation" docblock claim removed).
 - The debug log path was inconsistent: the writer used
   `uploads/bunnify-logs/debug.log` while the admin screen, field help, and
   `uninstall.php` referenced `uploads/bunnify-debug.log`. They now agree, so

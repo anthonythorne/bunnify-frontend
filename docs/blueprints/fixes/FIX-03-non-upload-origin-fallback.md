@@ -1,7 +1,7 @@
 # FIX-03 — `get_cdn_url_by_id()` origin fallback collapses sizes for non-uploads attachments
 
 - **Severity:** Low (only bites offloaded media / customised upload URLs)
-- **Status:** Open
+- **Status:** Done (2026-07-06)
 - **Found:** 2026-07-06 final review pass
 
 ## Problem

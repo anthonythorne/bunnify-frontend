@@ -425,18 +425,26 @@ class URLTransformer {
 			return false;
 		}
 
-		// Check file extension.
-		$extension          = pathinfo( $url_parts['path'], PATHINFO_EXTENSION );
-		$allowed_extensions = [ 'gif', 'jpg', 'jpeg', 'png', 'webp', 'heic' ];
+		// Check file extension against the shared allow-list.
+		$extension = pathinfo( $url_parts['path'], PATHINFO_EXTENSION );
 
-		if ( empty( $extension ) || ! in_array( strtolower( $extension ), $allowed_extensions, true ) ) {
+		if ( empty( $extension ) || ! in_array( strtolower( $extension ), ImageProcessor::ALLOWED_EXTENSIONS, true ) ) {
 			// Allow specific extensions to be processed if filter allows it.
 			if ( ! apply_filters( 'bunnify_any_extension_for_domain', false, $url_parts['host'] ) ) {
 				return false;
 			}
 		}
 
-		return true;
+		/**
+		 * Final say on whether a URL should be rewritten. Defaults to true;
+		 * return false to skip a specific image (e.g. exclude by path). Cast so
+		 * a truthy non-bool filter return cannot trip the strict bool return.
+		 *
+		 * @param bool   $is_valid  Whether the URL passes validation.
+		 * @param string $url       The image URL.
+		 * @param array  $url_parts Parsed URL parts.
+		 */
+		return (bool) apply_filters( 'bunnify_validate_image_url', true, $url, $url_parts );
 	}
 
 	/**
@@ -556,8 +564,13 @@ class URLTransformer {
 		// Get the true original image URL by stripping any suffixes.
 		$true_original_url = self::get_true_original_url( $attachment_id, $original_url );
 
-		// Build CDN URL directly without dimension stripping to preserve original filenames.
-		return self::$static_instance->build_cdn_url_from_attachment( $true_original_url, $args, $scheme ) ?? $original_url;
+		// Build the CDN URL (preserves the original filename). Null — not the
+		// origin URL — when the attachment's URL is not under the local uploads
+		// path (e.g. media offloaded to external storage, or a customised
+		// upload_url_path). Every caller treats null as "leave the input
+		// untouched", so core resolves the real intermediate files instead of a
+		// full-size-origin collapse (the disabled-state bug, on this path).
+		return self::$static_instance->build_cdn_url_from_attachment( $true_original_url, $args, $scheme );
 	}
 
 	/**

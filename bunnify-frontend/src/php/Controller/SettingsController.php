@@ -646,9 +646,18 @@ class SettingsController extends Controller {
 	 * would silently turn off rewriting on upgrade. Only an explicit '0',
 	 * written by the hidden field that now accompanies the checkbox, disables.
 	 *
+	 * The `BUNNIFY_DISABLE` constant (wp-config.php) is the highest-priority
+	 * kill switch: it forces this gate false regardless of the stored option,
+	 * and every rewrite path funnels through here, so defining it stops all
+	 * rewriting (attachments, content, resource hints) at once.
+	 *
 	 * @return bool True if enabled.
 	 */
 	public static function is_enabled(): bool {
+		if ( defined( 'BUNNIFY_DISABLE' ) && BUNNIFY_DISABLE ) {
+			return false;
+		}
+
 		$enabled = get_option( 'bunnify_enabled', null );
 
 		if ( null === $enabled || '' === $enabled ) {

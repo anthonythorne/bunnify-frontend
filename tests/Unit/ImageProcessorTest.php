@@ -35,42 +35,48 @@ final class ImageProcessorTest extends TestCase {
 			'single dash'           => array( 'photo-1024x684.jpg', array( 1024, 684 ) ),
 			'double dash'           => array( 'photo--1024x684.png', array( 1024, 684 ) ),
 			'webp'                  => array( 'hero-800x600.webp', array( 800, 600 ) ),
+			'avif'                  => array( 'shot-640x480.avif', array( 640, 480 ) ),
 			'no dimensions'         => array( 'photo.jpg', false ),
 			'disallowed extension'  => array( 'doc-1024x684.pdf', false ),
 			'dimensions not at end' => array( 'photo-1024x684-thumb.jpg', false ),
 		);
 	}
 
-	public function test_validate_image_url_accepts_supported_extension(): void {
-		$this->stub_url_helpers();
-
-		$this->assertTrue(
-			ImageProcessor::validate_image_url( 'https://example.com/wp-content/uploads/a.jpg' )
-		);
-	}
-
-	public function test_validate_image_url_rejects_non_http_scheme(): void {
-		$this->stub_url_helpers();
-
-		$this->assertFalse( ImageProcessor::validate_image_url( 'ftp://example.com/a.jpg' ) );
-	}
-
-	public function test_validate_image_url_rejects_disallowed_extension(): void {
-		$this->stub_url_helpers();
-
-		$this->assertFalse( ImageProcessor::validate_image_url( 'https://example.com/a.txt' ) );
-	}
-
 	/**
-	 * Stub the WordPress URL helpers used by ImageProcessor::validate_image_url().
+	 * The -scaled fallback must insert the suffix before the extension only,
+	 * keeping the host and path intact (the old str_replace('.','-scaled.')
+	 * produced "example-scaled.com/...photo-scaled.jpg" and never matched).
 	 */
-	private function stub_url_helpers(): void {
-		Functions\when( 'wp_parse_url' )->alias( 'parse_url' );
-		Functions\when( 'wp_parse_args' )->alias(
-			static fn( $args, $defaults ) => array_merge( $defaults, (array) $args )
+	public function test_scaled_retry_affixes_suffix_before_extension_only(): void {
+		$seen = array();
+		Functions\when( 'wp_cache_get' )->justReturn( false );
+		Functions\when( 'wp_cache_set' )->justReturn( true );
+		Functions\when( 'get_post' )->justReturn(
+			(object) array(
+				'ID'        => 77,
+				'post_date' => '2020-01-01 00:00:00',
+			)
 		);
-		// apply_filters( $tag, $value, ... ) — Brain Monkey returnArg() is 1-based,
-		// so arg 2 is $value; pass the value through unchanged.
-		Functions\when( 'apply_filters' )->returnArg( 2 );
+		// Base + dimension-stripped lookups miss; only the -scaled variant hits.
+		Functions\when( 'attachment_url_to_postid' )->alias(
+			static function ( $url ) use ( &$seen ) {
+				$seen[] = $url;
+				return false !== strpos( $url, '-scaled.jpg' ) ? 77 : 0;
+			}
+		);
+
+		$id = ImageProcessor::get_attachment_id_from_url(
+			'https://example.com/wp-content/uploads/2026/06/photo-300x200.jpg'
+		);
+
+		$this->assertSame( 77, $id );
+		$this->assertContains(
+			'https://example.com/wp-content/uploads/2026/06/photo-scaled.jpg',
+			$seen,
+			'retry keeps the host and only affixes -scaled before the extension'
+		);
+		foreach ( $seen as $url ) {
+			$this->assertStringNotContainsString( 'example-scaled.com', $url, 'host must never be mangled' );
+		}
 	}
 }

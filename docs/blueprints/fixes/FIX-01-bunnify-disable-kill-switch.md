@@ -1,7 +1,7 @@
 # FIX-01 — Make `BUNNIFY_DISABLE` the kill-switch the readme promises
 
 - **Severity:** Medium (documented behaviour ≠ actual behaviour)
-- **Status:** Open
+- **Status:** Done (2026-07-06)
 - **Found:** 2026-07-06 final review pass
 
 ## Problem

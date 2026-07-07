@@ -278,6 +278,27 @@ final class URLTransformerTest extends TestCase {
 		$this->assertFalse( URLTransformer::validate_image_url( 'https://example.com/a.txt' ) );
 	}
 
+	public function test_validate_image_url_accepts_avif(): void {
+		Functions\when( 'wp_parse_url' )->alias( 'parse_url' );
+		Functions\when( 'get_option' )->justReturn( '' );
+		Functions\when( 'apply_filters' )->returnArg( 2 );
+
+		$this->assertTrue( URLTransformer::validate_image_url( 'https://example.com/wp-content/uploads/a.avif' ) );
+	}
+
+	public function test_validate_image_url_filter_can_veto_a_valid_image(): void {
+		Functions\when( 'wp_parse_url' )->alias( 'parse_url' );
+		Functions\when( 'get_option' )->justReturn( '' );
+		// bunnify_validate_image_url returns false → skip this otherwise-valid image.
+		Functions\when( 'apply_filters' )->alias(
+			static function ( string $hook, $value = null ) {
+				return 'bunnify_validate_image_url' === $hook ? false : $value;
+			}
+		);
+
+		$this->assertFalse( URLTransformer::validate_image_url( 'https://example.com/wp-content/uploads/a.jpg' ) );
+	}
+
 	/**
 	 * Reset the static CDN state get_cdn_url_by_id() caches per request.
 	 */
@@ -326,6 +347,31 @@ final class URLTransformerTest extends TestCase {
 		$this->reset_static_cdn();
 		$this->stub_options( array() );
 		Functions\when( 'wp_get_attachment_url' )->justReturn( 'https://origin.example.com/wp-content/uploads/a.jpg' );
+
+		$this->assertNull( URLTransformer::get_cdn_url_by_id( 42, array( 'width' => 300 ) ) );
+	}
+
+	/**
+	 * When the attachment's URL is not under the local uploads path (offloaded
+	 * media / customised upload_url_path), get_cdn_url_by_id() must return null
+	 * — not the full-size origin URL, which collapses intermediate sizes.
+	 */
+	public function test_get_cdn_url_by_id_null_for_non_local_upload(): void {
+		$this->reset_static_cdn();
+		$this->stub_options( array( 'bunnify_hostname' => 'cdn.example.com' ) );
+		Functions\when( 'sanitize_text_field' )->returnArg();
+		Functions\when( 'wp_parse_url' )->alias( 'parse_url' );
+		Functions\when( 'wp_cache_get' )->justReturn( false );
+		Functions\when( 'wp_cache_set' )->justReturn( true );
+		Functions\when( 'wp_get_attachment_metadata' )->justReturn( array() );
+		$upload = array(
+			'baseurl' => 'https://example.com/wp-content/uploads',
+			'basedir' => '/var/www/html/wp-content/uploads',
+		);
+		Functions\when( 'wp_upload_dir' )->justReturn( $upload );
+		Functions\when( 'wp_get_upload_dir' )->justReturn( $upload );
+		// Origin URL lives outside the uploads path.
+		Functions\when( 'wp_get_attachment_url' )->justReturn( 'https://external.example.net/media/photo.jpg' );
 
 		$this->assertNull( URLTransformer::get_cdn_url_by_id( 42, array( 'width' => 300 ) ) );
 	}

@@ -147,7 +147,6 @@ use BunnifyFrontend\Library\URLTransformer;
  * - All URLs are validated before transformation
  * - Input sanitization prevents XSS vulnerabilities
  * - Error handling ensures graceful fallbacks
- * - Nonce validation for admin operations
  */
 class ImageController extends Controller {
 	use DebugTrait;
@@ -286,7 +285,7 @@ class ImageController extends Controller {
 				$cdn_args['height'] = $height;
 			} else {
 				// Calculate height based on aspect ratio if we have image metadata.
-				$image_meta = wp_get_attachment_metadata( $attachment_id );
+				$image_meta = $this->get_cached_attachment_metadata( $attachment_id );
 				if ( ! empty( $image_meta['width'] ) && ! empty( $image_meta['height'] ) && $width ) {
 					$aspect_ratio       = $image_meta['height'] / $image_meta['width'];
 					$calculated_height  = round( $width * $aspect_ratio );
@@ -326,7 +325,7 @@ class ImageController extends Controller {
 				$cdn_args['height'] = $height;
 			} else {
 				// Calculate height based on aspect ratio if we have image metadata.
-				$image_meta = wp_get_attachment_metadata( $attachment_id );
+				$image_meta = $this->get_cached_attachment_metadata( $attachment_id );
 				if ( ! empty( $image_meta['width'] ) && ! empty( $image_meta['height'] ) && $width ) {
 					$aspect_ratio       = $image_meta['height'] / $image_meta['width'];
 					$calculated_height  = round( $width * $aspect_ratio );
@@ -774,7 +773,9 @@ class ImageController extends Controller {
 		}
 
 		// (c) Images only by default; already-CDN URLs are left alone.
-		if ( ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
+		// validate_image_url() already rejects already-CDN URLs, so no separate
+		// is_cdn_url() guard is needed here.
+		if ( ! URLTransformer::validate_image_url( $url ) ) {
 			return $url;
 		}
 
@@ -818,7 +819,9 @@ class ImageController extends Controller {
 			return $url;
 		}
 
-		if ( ! URLTransformer::validate_image_url( $url ) || URLTransformer::is_cdn_url( $url ) ) {
+		// validate_image_url() already rejects already-CDN URLs, so no separate
+		// is_cdn_url() guard is needed here.
+		if ( ! URLTransformer::validate_image_url( $url ) ) {
 			return $url;
 		}
 
@@ -1043,7 +1046,12 @@ class ImageController extends Controller {
 			$image_sizes = \BunnifyFrontend\Library\ImageProcessor::get_image_sizes();
 			if ( array_key_exists( $size, $image_sizes ) ) {
 				$size_data = $image_sizes[ $size ];
-				return [ $size_data['width'], $size_data['height'] ];
+				// A dimensionless size (e.g. 'full' stores null/null) can't drive
+				// srcset generation — fall through to the image's real dimensions
+				// rather than emitting a malformed zero-width candidate.
+				if ( ! empty( $size_data['width'] ) && ! empty( $size_data['height'] ) ) {
+					return [ $size_data['width'], $size_data['height'] ];
+				}
 			}
 		}
 
